@@ -1,0 +1,1924 @@
+{
+    "categories": [
+        {
+            "name": "GROCERY",
+            "subcategories": [
+                "COSTCO",
+                "FRED-MEYER",
+                "WINCO FOODS",
+                "INDIAN STORE",
+                "SAFEWAY",
+                "SPROUTS FARMERS MARKET",
+                "OTHERS"
+            ]
+        },
+        {
+            "name": "LIFESTYLE",
+            "subcategories": [
+                "FOOD",
+                "CLOUD_STORAGE",
+                "CLOTH",
+                "FOOTWEAR",
+                "EVENT",
+                "HAIRCUT",
+                "MAKEUP",
+                "OTHERS"
+            ]
+        },
+        {
+            "name": "LOAN",
+            "subcategories": [
+                "HOME_LOAN",
+                "CAR_LOAN"
+            ]
+        },
+        {
+            "name": "UTILITTY",
+            "subcategories": [
+                "INTERNET",
+                "MOBILE",
+                "WATER",
+                "PSE-GAS/ELECTRICITY",
+                "PUD_ELICTRICITY"
+            ]
+        },
+        {
+            "name": "MEDICAL",
+            "subcategories": [
+                "SHIKHA",
+                "PRATYUSH",
+                "MEDICATION"
+            ]
+        },
+        {
+            "name": "INSURANCE",
+            "subcategories": [
+                "TRANSAMERICA",
+                "PROGRESSIVE"
+            ]
+        },
+        {
+            "name": "HOUSE_HOLD",
+            "subcategories": [
+                "DECORATION",
+                "FURNITURE",
+                "ELECTRONICS",
+                "MISC",
+                "RENT",
+                "ONLINE_SHOPPING",
+                "ATM_WITHDRAWAL"
+            ]
+        },
+        {
+            "name": "INCOME",
+            "subcategories": [
+                "SALARY",
+                "INTEREST"
+            ]
+        },
+        {
+            "name": "LEARNING",
+            "subcategories": [
+                "AWS",
+                "DEVICE",
+                "FEES",
+                "BOOK",
+                "ONLINE_COURSE",
+                "GENAI",
+                "OTHERS"
+            ]
+        },
+        {
+            "name": "MONEY_MOVEMENT",
+            "subcategories": [
+                "SAVING",
+                "LOAN_PAYMENT",
+                "CC_PAYMENT",
+                "CC_PAYMENT_RECIEVED",
+                "LOAN_PAYMENT_RECIEVED",
+                "AMOUNT_RECEIVED",
+                "FROM_STOCK_MARKET",
+                "TO_STOCK_MARKET",
+                "OTHERS"
+            ]
+        },
+        {
+            "name": "FITNESS",
+            "subcategories": [
+                "DANCE",
+                "GYM",
+                "MISC"
+            ]
+        },
+        {
+            "name": "INCOME_TAX",
+            "subcategories": [
+                "PAYMENT",
+                "REFUND"
+            ]
+        },
+        {
+            "name": "SUBSCRIPTIONS",
+            "subcategories": [
+                "NETFLIX",
+                "AMAZON_PRIME",
+                "COSTCO",
+                "MUSIC",
+                "CHASE_BON_CC"
+            ]
+        },
+        {
+            "name": "TRANSPORTATION",
+            "subcategories": [
+                "FUEL",
+                "TOLL",
+                "CAR_WASH",
+                "SERVICE",
+                "FLIGHT_FAIR",
+                "TAX",
+                "TRAIN",
+                "BUS",
+                "MISC",
+                "PARKING"
+            ]
+        },
+        {
+            "name": "PROPERTY_INVESTMENT",
+            "subcategories": [
+                "HOUSE",
+                "LAND"
+            ]
+        }
+    ],
+    "rules": [
+        {
+            "category": "GROCERY",
+            "subcategory": "COSTCO",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "COSTCO WHSE"
+                }
+            ],
+            "note": "Shopping in COSTCO"
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "MOBILE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "XFINITY MOBILE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "INTERNET",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "COMCAST-XFINITY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MEDICAL",
+            "subcategory": "SHIKHA",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "VIRGINIA MASON"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "FRED-MEYER",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "FRED-MEYER"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INSURANCE",
+            "subcategory": "TRANSAMERICA",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "exact",
+                    "value": "TRANSAMERICA - PREMIUM"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LOAN",
+            "subcategory": "CAR_LOAN",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "WithdrawalOnlineBankingTransferTo2016702802CNS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LOAN",
+            "subcategory": "HOME_LOAN",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MOVEMENT MTG PMT MORTGAGE PMT - MTGE PAYMT"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "BIRYANI"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "WINCO FOODS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "WINCO FOO"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MAYURI FOODS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MAYURI BAKERY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INCOME",
+            "subcategory": "SALARY",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Deposit AMAZON.COM"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MEDICAL",
+            "subcategory": "MEDICATION",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "WALGREENS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "SEA112 2MARKETS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOUD_STORAGE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "GOOGLE *Google One"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LEARNING",
+            "subcategory": "AWS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Amazon web services"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOUD_STORAGE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "APPLE.COM/BILL"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "IMRAN`S MARKET"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "CC_PAYMENT_RECIEVED",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Deposit Transfer From ******9471 Moved money to saving acc"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "SAVING",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Withdrawal Transfer To ******9463 Monthly Saving For the Trip"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "LOAN_PAYMENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Descriptive Withdrawal OLB External Transfer"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "DECORATION",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "DOLLAR TREE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "CC_PAYMENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit CHASE CREDIT CRD - AUTOPAY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INSURANCE",
+            "subcategory": "PROGRESSIVE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit PROG CASUALTY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INSURANCE",
+            "subcategory": "PROGRESSIVE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit PROG DIRECT INS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "PSE-GAS/ELECTRICITY",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit PUGET SOUND ENER BILLPAY - BILLPAY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INSURANCE",
+            "subcategory": "TRANSAMERICA",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit TRANSAMERICA - PREMIUM"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INCOME",
+            "subcategory": "INTEREST",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Dividend/Interest"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "INTERNET",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit WAVE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "CC_PAYMENT_RECIEVED",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Deposit Internet transfer from account ending"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "LOAN_PAYMENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Moved money to saving accou"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "LOAN_PAYMENT_RECIEVED",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ExternalDepositPratyushKumar"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "CC_PAYMENT_RECIEVED",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "AUTOMATIC PAYMENT - THANK YOU"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "DECORATION",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "DOLLARTREE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "SAFEWAY",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "SAFEWAY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "FRED-MEYER",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "FRED MEYER"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "CC_PAYMENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit APPLECARD GSBANK - PAYMENT"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "INDIA SUPERMARKET"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "STARBUCKS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "SOUTHERN SPICE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "MOBILE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit ATT - Payment"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ASIAN FAMILY MARKET"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOTH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ROSS STORE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "JD`S MARKET"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "APNA BAZAR"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOTH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MICHAELS STORES"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "JACK IN THE BOX"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOTH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "WAL-MART"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "DK MARKET"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "PUNJABI TADKA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MERCURYS COFFEE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "FURNITURE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "IKEA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LEARNING",
+            "subcategory": "FEES",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "WORLD EDUCATION SERVIC"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "FROM_STOCK_MARKET",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Deposit ROBINHOOD - CREDITS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "LOAN_PAYMENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Withdrawal Transfer To ******3077"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "AMOUNT_RECEIVED",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Deposit Transfer From ******9471"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "AMZN BINGO"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "RENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit BILT PAYMENT"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "FITNESS",
+            "subcategory": "DANCE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "DANCE 4423 232ND PLACE SOUTHEAS BOTHELL 98021 WA USA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MEDICAL",
+            "subcategory": "MEDICATION",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "CVS/PHARMACY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "PANDA EXPRESS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "HELLO INDIA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "TACO BELL"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "INDIAN STORE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "SHALIMAR GROCERY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "OTHERS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "TRADER JOE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "SPROUTS FARMERS MARKET",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "SPROUTS FARMERS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "OTHERS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Deposit Transfer From ******3077"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "MONEY_MOVEMENT",
+            "subcategory": "OTHERS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Withdrawal Transfer To ******9471"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INCOME_TAX",
+            "subcategory": "REFUND",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Deposit IRS TREAS 310 - TAX REF REF*KUMA*ANDOVE*12/2024*TAX"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "MAKEUP",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "URVASHI BEAUTY STUDIO"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "COSTCO",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "COSTCO *ANNUAL RENEWAL"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOTH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ROAD RUNNER SPORTS-116 BELLEVUE WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "CTLP*Canteen Vending S CHARLOTTE NC"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INSURANCE",
+            "subcategory": "PROGRESSIVE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "PROGRESSIVE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Sissi & Franz Bar Munchen-Flugh"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MCDONALD"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "OTHERS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "MARSHALLS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ARBYS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LEARNING",
+            "subcategory": "ONLINE_COURSE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ZYBOOK COLLEGE TXTBOOK"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LEARNING",
+            "subcategory": "FEES",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "UW ENROLLMENT MGMT MIACRUZ@UW.ED WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "NETFLIX",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "NETFLIX.COM"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "NETFLIX",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Netflix.com"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "NETFLIX",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "NETFLIX, INC."
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "AMAZON_PRIME",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "AMAZON PRIME"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "MISC",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Descriptive Withdrawal P2P Transfer"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "ONLINE_SHOPPING",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "AMAZON MKTPL"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LEARNING",
+            "subcategory": "FEES",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "UW GRADUATE SCHOOL 4109 E STEVENS WAY NE SEATTLE 98195 WA USA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "GROCERY",
+            "subcategory": "OTHERS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "GROCERY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "MUSIC",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Amazon Music"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "ONLINE_SHOPPING",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "AMAZON.COM AMZN.COM/BILLWA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "ONLINE_SHOPPING",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "AMAZON MARKETPLACE AMZN.COM/BILLWA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "ATM_WITHDRAWAL",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ATM Withdrawal"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "HAIRCUT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "GREAT CLIPS"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOTH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "JCPENNEY"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "subcategory": "CHASE_BON_CC",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ANNUAL MEMBERSHIP FEE"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "OTHERS",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "TARGET"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "subcategory": "ONLINE_SHOPPING",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Amazon.com*HZ9HC2YR3 Amzn.com/bill WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "TST*T AND C KITCHEN - MI Mill Creek WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "HAIRCUT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Supercuts Lynnwood Lynnwood WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "PUD_ELICTRICITY",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "PUDNO1-SNOHOMISH"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "CHARLEYS PHILLY STEAKS 23 RENTON WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "INCOME_TAX",
+            "subcategory": "PAYMENT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "BTF GLOBAL SOLUTIONS PRI Hyderabad"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "UTILITTY",
+            "subcategory": "WATER",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "POS Transaction SILVER LAK"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "CLOTH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "RECREATION.GOV 877-444-6777 NM"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LIFESTYLE",
+            "subcategory": "FOOD",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "TST* WETZEL'S PRETZELS - BELLEVUE WA"
+                }
+            ],
+            "note": null
+        },
+        {
+            "category": "LEARNING",
+            "subcategory": "DEVICE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "Apple Store PORTLAND OR"
+                },
+                {
+                    "field": "Date",
+                    "rule_type": "equal",
+                    "value": "2025-10-18"
+                }
+            ],
+            "note": "MacBook M4 Pro"
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "FUEL",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "COSTCO GAS"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "MISC",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit WA STATE DOL 240 DOL ACH TNSFR - WA DRIVER"
+                },
+                {
+                    "field": "Date",
+                    "rule_type": "equal",
+                    "value": "2025-06-17"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "FUEL",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "QUICK LUBE & OIL BELLEVUE WA"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "TOLL",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "WSDOT-GOODTOGO ONLINE"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "MISC",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "U-HAUL"
+                }
+            ],
+            "note": "Shifting"
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "PARKING",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "VM PARKING GARAGE SEATTLE WA"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "TRANSPORTATION",
+            "subcategory": "CAR_WASH",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "DIAMOND CAR WASH"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "PROPERTY_INVESTMENT",
+            "subcategory": "HOUSE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "BNF:FIRST AMERICAN"
+                }
+            ],
+            "note": ""
+        },
+        {
+            "category": "PROPERTY_INVESTMENT",
+            "subcategory": "HOUSE",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "ACH Debit Viamericas Corp. - ePay"
+                }
+            ],
+            "note": ""
+        }
+    ],
+    "budgets": [
+        {
+            "category": "LIFESTYLE",
+            "amount": 100.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "FITNESS",
+            "amount": 50.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "LOAN",
+            "amount": 6000.0,
+            "year": 2025,
+            "months": [
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "UTILITTY",
+            "amount": 250.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "MEDICAL",
+            "amount": 100.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "INSURANCE",
+            "amount": 400.0,
+            "year": 2025,
+            "months": [
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "SUBSCRIPTIONS",
+            "amount": 50.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "TRANSPORTATION",
+            "amount": 200.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "LEARNING",
+            "amount": 50.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "INCOME_TAX",
+            "amount": 100.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "amount": 100.0,
+            "year": 2025,
+            "months": [
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "GROCERY",
+            "amount": 500.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ]
+        },
+        {
+            "category": "LOAN",
+            "amount": 700.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ]
+        },
+        {
+            "category": "HOUSE_HOLD",
+            "amount": 2800.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ]
+        },
+        {
+            "category": "INSURANCE",
+            "amount": 50.0,
+            "year": 2025,
+            "months": [
+                1,
+                2,
+                3
+            ]
+        }
+    ]
+}

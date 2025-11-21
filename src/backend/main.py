@@ -28,13 +28,14 @@ app.add_middleware(
 # Get the project root directory (which is 2 levels up from the current file)
 # main.py -> backend -> expense_tracker_ui -> personal_tracker
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+print(PROJECT_ROOT)
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
-from personal_tracker.processing.rule_engine import RuleEngine
+from backend.processing.rule_engine import RuleEngine
 
-SETTINGS_FILE = PROJECT_ROOT / "data" / "user_settings.json"
-CONSOLIDATED_EXPENSES_CSV = PROJECT_ROOT / "data" / "output" / "expense" / "consolidated_expenses.csv"
+SETTINGS_FILE = PROJECT_ROOT / "data" / "user_settings" / "user_settings.json"
+CONSOLIDATED_EXPENSES_CSV = PROJECT_ROOT / "data" / "expense" / "consolidated_expenses.csv"
 
 rule_engine = RuleEngine(settings_file=SETTINGS_FILE)
 
