@@ -148,6 +148,14 @@
                 "HOUSE",
                 "LAND"
             ]
+        },
+        {
+            "name": "TRAVEL",
+            "subcategories": [
+                "FLIGHT",
+                "HOTEL",
+                "MISC"
+            ]
         }
     ],
     "rules": [
