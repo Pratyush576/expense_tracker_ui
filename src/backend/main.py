@@ -77,6 +77,7 @@ class Settings(BaseModel):
     categories: List[Category]
     rules: List[Rule]
     budgets: List[Budget] = [] # Add budgets field
+    currency: str = "USD" # Add currency field
 
 # Helper functions for date and period calculations
 def get_period_start_end(date: datetime, time_granularity: BudgetTimeWindow) -> Tuple[datetime, datetime]:
@@ -186,16 +187,12 @@ def get_settings():
             settings_data = json.load(f)
             
             # Convert old category format (List[str]) to new format (List[Category])
-            if all(isinstance(c, str) for c in settings_data.get('categories', [])):
+            if 'categories' in settings_data and all(isinstance(c, str) for c in settings_data.get('categories', [])):
                 settings_data['categories'] = [{"name": c, "subcategories": []} for c in settings_data['categories']]
             
-            # Convert category dictionaries to Category Pydantic models
-            settings_data['categories'] = [Category(**c) for c in settings_data.get('categories', [])]
-
-            # Ensure all rules have a subcategory and note field and convert to Rule Pydantic models
+            # Handle old rule format
             processed_rules = []
             for rule_data in settings_data.get('rules', []):
-                # Handle old rule format without 'conditions'
                 if 'conditions' not in rule_data:
                     rule_data = {
                         "category": rule_data.get("category"),
@@ -210,17 +207,12 @@ def get_settings():
                         ],
                         "note": rule_data.get("note")
                     }
-                
-                # Ensure conditions are properly parsed into Condition models
-                rule_data['conditions'] = [Condition(**c) for c in rule_data['conditions']]
-                processed_rules.append(Rule(**rule_data))
+                processed_rules.append(rule_data)
             settings_data['rules'] = processed_rules
             
-            # Ensure all budgets are properly parsed into Budget models
-            settings_data['budgets'] = [Budget(**b) for b in settings_data.get('budgets', [])]
-            
-            return settings_data
-    return {"categories": [], "rules": []}
+            return Settings(**settings_data).dict()
+
+    return Settings(categories=[], rules=[], budgets=[]).dict()
 
 
 

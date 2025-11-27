@@ -1676,6 +1676,19 @@
                 }
             ],
             "note": ""
+        },
+        {
+            "category": "TRAVEL",
+            "subcategory": "FLIGHT",
+            "logical_operator": "AND",
+            "conditions": [
+                {
+                    "field": "Description",
+                    "rule_type": "contains",
+                    "value": "IndiGo Airlines DELHI"
+                }
+            ],
+            "note": ""
         }
     ],
     "budgets": [
