@@ -3,36 +3,43 @@ import re
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+import logging
 
 class RuleEngine:
-    def __init__(self, settings_file: Path):
-        self.settings_file = settings_file
-        self.rules = self._load_rules()
+    def __init__(self, settings_file: Path = None, settings_data: dict = None):
+        if settings_data:
+            self.rules = self._load_rules_from_data(settings_data)
+        elif settings_file:
+            self.settings_file = settings_file
+            self.rules = self._load_rules_from_file()
+        else:
+            self.rules = []
 
-    def _load_rules(self) -> list:
-        """
-        Loads rules from the user settings JSON file.
-        Handles both old (single-field) and new (multi-field 'conditions' array) rule formats.
-        This method is responsible for reading the JSON file specified in the constructor,
-        parsing the rules, and converting any old-format rules to the new format.
-        """
+    def _load_rules_from_file(self) -> list:
         with open(self.settings_file, 'r') as f:
             settings = json.load(f)
-        
+        return self._process_rules(settings)
+
+    def _load_rules_from_data(self, settings_data: dict) -> list:
+        return self._process_rules(settings_data)
+
+    def _process_rules(self, settings: dict) -> list:
+        """
+        Processes rules from a settings dictionary.
+        Handles both old (single-field) and new (multi-field 'conditions' array) rule formats.
+        """
         loaded_rules = []
         for rule_data in settings.get('rules', []):
             if 'conditions' in rule_data:
-                # New multi-field rule format
                 loaded_rules.append(rule_data)
             else:
-                # Old single-field rule format - convert to new format
                 converted_rule = {
                     "category": rule_data.get("category"),
                     "subcategory": rule_data.get("subcategory"),
-                    "logical_operator": "AND", # Default to AND for old rules
+                    "logical_operator": "AND",
                     "conditions": [
                         {
-                            "field": "Description", # Default field for old rules
+                            "field": "Description",
                             "rule_type": rule_data.get("rule_type"),
                             "value": rule_data.get("value")
                         }
@@ -51,10 +58,27 @@ class RuleEngine:
         rule_type = condition.get("rule_type")
         value = condition.get("value")
 
-        transaction_value = transaction.get(field)
+        logging.debug(f"Evaluating condition: field={field}, rule_type={rule_type}, value={value}")
+        logging.debug(f"Transaction object in _evaluate_condition: {transaction}")
+        logging.debug(f"Attempting to access field: {field} (original), {field.lower()} (lowercase)")
+
+        transaction_value = None
+        if isinstance(transaction, dict):
+            transaction_value = transaction.get(field)
+            if transaction_value is None:
+                transaction_value = transaction.get(field.lower())
+            logging.debug(f"Accessed transaction_value (dict): {transaction_value}")
+        elif hasattr(transaction, field.lower().replace(" ", "_")): # For SQLModel objects
+            transaction_value = getattr(transaction, field.lower().replace(" ", "_"))
+            logging.debug(f"Accessed transaction_value (SQLModel): {transaction_value}")
+        elif hasattr(transaction, field): # For Pandas Series
+            transaction_value = transaction[field]
+            logging.debug(f"Accessed transaction_value (Pandas Series): {transaction_value}")
 
         if transaction_value is None:
+            logging.debug(f"Transaction value for field '{field}' is None. Returning False.")
             return False
+
 
         if field == "Date":
             try:
@@ -112,18 +136,21 @@ class RuleEngine:
                     return False # Cannot compare non-numeric values
         return False
 
-    def categorize_transaction(self, transaction: pd.Series) -> tuple[str, str]:
+    def categorize_transaction(self, transaction: dict) -> tuple[str, str]:
         """
         Categorizes a single transaction based on the loaded rules.
         It iterates through the rules and applies them to the transaction.
         The first rule that matches determines the category and subcategory.
         If no rules match, it returns ("UNCATEGORIZED", None).
         """
+        logging.debug(f"Categorizing transaction: {transaction}")
         for rule in self.rules:
+            logging.debug(f"Evaluating rule: {rule}")
             logical_operator = rule.get("logical_operator", "AND")
             conditions = rule.get("conditions", [])
             
             if not conditions:
+                logging.debug("Rule has no conditions, skipping.")
                 continue
 
             if logical_operator == "AND":
@@ -132,9 +159,15 @@ class RuleEngine:
                 result = any(self._evaluate_condition(transaction, c) for c in conditions)
             else:
                 result = False
+            logging.debug(f"Rule evaluation result: {result}")
 
             if result:
-                return rule.get("category", "UNCATEGORIZED"), rule.get("subcategory")
+                category = rule.get("category", "UNCATEGORIZED")
+                subcategory = rule.get("subcategory")
+                logging.info(f"Transaction '{transaction['description']}' categorized as: {category}:{subcategory}")
+                return category, subcategory
+        
+        logging.info(f"Transaction '{transaction['description']}' not categorized.")
         return "UNCATEGORIZED", None
 
     def apply_rules_to_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
