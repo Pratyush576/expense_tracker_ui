@@ -1,2 +1,4 @@
 __pycache__/
 .idea/
+database.db
+local_cache/
