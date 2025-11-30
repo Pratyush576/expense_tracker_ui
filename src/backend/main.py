@@ -10,7 +10,7 @@ from pathlib import Path
 from enum import Enum  # Import Enum
 import logging
 from datetime import datetime, timedelta  # Import datetime and timedelta
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 
 # Configure logging
 logging.basicConfig(
@@ -348,6 +348,51 @@ def get_payment_sources(profile_id: int, session: Session = Depends(get_session)
     )
     sources = session.exec(statement).all()
     return sources
+
+
+@app.post("/api/settings")
+def update_settings(
+    profile_id: int, settings: Settings, session: Session = Depends(get_session)
+):
+    """
+    Updates the settings for a given profile.
+    """
+    # Delete existing settings
+    session.exec(delete(Category).where(Category.profile_id == profile_id))
+    session.exec(delete(Rule).where(Rule.profile_id == profile_id))
+    session.exec(delete(Budget).where(Budget.profile_id == profile_id))
+
+    # Create new settings
+    for category_data in settings.categories:
+        db_category = Category(
+            name=category_data.name,
+            subcategories=json.dumps(category_data.subcategories),
+            profile_id=profile_id,
+        )
+        session.add(db_category)
+
+    for rule_data in settings.rules:
+        db_rule = Rule(
+            category=rule_data.category,
+            subcategory=rule_data.subcategory,
+            logical_operator=rule_data.logical_operator,
+            conditions=json.dumps([c.dict() for c in rule_data.conditions]),
+            profile_id=profile_id,
+        )
+        session.add(db_rule)
+
+    for budget_data in settings.budgets:
+        db_budget = Budget(
+            category=budget_data.category,
+            amount=budget_data.amount,
+            year=budget_data.year,
+            months=json.dumps(budget_data.months),
+            profile_id=profile_id,
+        )
+        session.add(db_budget)
+
+    session.commit()
+    return {"message": "Settings updated successfully"}
 
 
 # Helper functions for date and period calculations
