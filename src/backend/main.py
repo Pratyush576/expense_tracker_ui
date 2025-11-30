@@ -10,7 +10,9 @@ from pathlib import Path
 from enum import Enum  # Import Enum
 import logging
 from datetime import datetime, timedelta  # Import datetime and timedelta
+import uuid # Import uuid
 from sqlmodel import Session, select, delete
+from sqlalchemy import inspect, text
 
 # Configure logging
 logging.basicConfig(
@@ -53,18 +55,43 @@ def get_session():
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+    with Session(engine) as session:
+        inspector = inspect(engine)
+        columns = inspector.get_columns("profile")
+        column_names = [col['name'] for col in columns]
+        if "public_id" not in column_names:
+            session.execute(text("ALTER TABLE profile ADD COLUMN public_id VARCHAR(10)"))
+            session.commit()
+            print("Added 'public_id' column to 'profile' table.")
+            
+            # Generate public_id for existing profiles
+            profiles_without_public_id = session.exec(select(Profile).where(Profile.public_id == None)).all()
+            for profile in profiles_without_public_id:
+                # Generate a simple hash for existing profiles
+                profile.public_id = str(uuid.uuid4().hex[:10]) # Generate a 10-char hex string
+                session.add(profile)
+            session.commit()
+            print(f"Generated public_id for {len(profiles_without_public_id)} existing profiles.")
+
 
 
 # Define Pydantic models for API requests
 class ProfileCreate(BaseModel):
+    public_id: str
     name: str
     currency: str
 
 
 class ProfileResponse(BaseModel):
     id: int
+    public_id: str
     name: str
     currency: str
+
+
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    currency: Optional[str] = None
 
 
 # Define Category Pydantic Model
@@ -117,7 +144,13 @@ class Settings(BaseModel):
 
 @app.post("/api/profiles", response_model=ProfileResponse)
 def create_profile(profile: ProfileCreate, session: Session = Depends(get_session)):
-    db_profile = Profile(name=profile.name, currency=profile.currency)
+    # For now, associate with the first user found.
+    # In a real application, you would get the user from the request's authentication info.
+    user = session.exec(select(User)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No users found in the database.")
+
+    db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, user_id=user.id)
     session.add(db_profile)
     session.commit()
     session.refresh(db_profile)
@@ -139,6 +172,27 @@ def delete_profile(profile_id: int, session: Session = Depends(get_session)):
     session.delete(profile)
     session.commit()
     return {"message": "Profile deleted successfully"}
+
+
+@app.put("/api/profiles/{profile_id}", response_model=ProfileResponse)
+def update_profile(
+    profile_id: int,
+    profile_update: ProfileUpdate,
+    session: Session = Depends(get_session),
+):
+    profile = session.get(Profile, profile_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    if profile_update.name is not None:
+        profile.name = profile_update.name
+    if profile_update.currency is not None:
+        profile.currency = profile_update.currency
+
+    session.add(profile)
+    session.commit()
+    session.refresh(profile)
+    return profile
 
 
 @app.get("/api/expenses")

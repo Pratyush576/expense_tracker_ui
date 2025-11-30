@@ -14,6 +14,7 @@ class User(SQLModel, table=True):
 
 class Profile(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    public_id: str = Field(unique=True, max_length=10) # New field
     name: str = Field(index=True)
     currency: str
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
