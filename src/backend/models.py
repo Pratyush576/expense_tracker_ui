@@ -26,6 +26,7 @@ class Profile(SQLModel, table=True):
     public_id: str = Field(unique=True, max_length=10) # New field
     name: str = Field(index=True)
     currency: str
+    is_hidden: bool = Field(default=False) # New field for hiding profiles
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
 
     user: Optional[User] = Relationship(back_populates="profiles")

@@ -72,6 +72,11 @@ def on_startup():
                 session.add(profile)
             session.commit()
             print(f"Generated public_id for {len(profiles_without_public_id)} existing profiles.")
+        
+        if "is_hidden" not in column_names:
+            session.execute(text("ALTER TABLE profile ADD COLUMN is_hidden BOOLEAN DEFAULT FALSE"))
+            session.commit()
+            print("Added 'is_hidden' column to 'profile' table with default FALSE.")
 
 
 
@@ -87,11 +92,13 @@ class ProfileResponse(BaseModel):
     public_id: str
     name: str
     currency: str
+    is_hidden: bool
 
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     currency: Optional[str] = None
+    is_hidden: Optional[bool] = None
 
 
 # Define Pydantic models for PaymentSource
@@ -264,15 +271,18 @@ def create_profile(profile: ProfileCreate, session: Session = Depends(get_sessio
 
 
 @app.get("/api/profiles", response_model=List[ProfileResponse])
-def get_profiles(session: Session = Depends(get_session)):
-    profiles = session.exec(select(Profile)).all()
-    logging.info(f"Found {len(profiles)} profiles in the database.")
+def get_profiles(include_hidden: bool = False, session: Session = Depends(get_session)):
+    if include_hidden:
+        profiles = session.exec(select(Profile)).all()
+    else:
+        profiles = session.exec(select(Profile).where(Profile.is_hidden == False)).all()
+    logging.info(f"Found {len(profiles)} profiles in the database (include_hidden={include_hidden}).")
     return profiles
 
 
 @app.get("/api/profiles/summary")
 def get_profiles_summary(session: Session = Depends(get_session)):
-    profiles = session.exec(select(Profile)).all()
+    profiles = session.exec(select(Profile).where(Profile.is_hidden == False)).all()
     summary_data = []
     current_year = datetime.now().year
 
@@ -323,6 +333,8 @@ def update_profile(
         profile.name = profile_update.name
     if profile_update.currency is not None:
         profile.currency = profile_update.currency
+    if profile_update.is_hidden is not None:
+        profile.is_hidden = profile_update.is_hidden
 
     session.add(profile)
     session.commit()
@@ -793,12 +805,12 @@ async def get_budget_vs_expenses(
     Provides data for the budget vs. expense graph for a given profile.
     """
     categories = request.query_params.getlist("categories[]")
-    logging.info(
-        f"GET /api/budget_vs_expenses called with profile_id: {profile_id}, time_granularity: {time_granularity}, num_periods: {num_periods}, year: {year}, categories: {categories}"
-    )
+    logging.info(f"GET /api/budget_vs_expenses called with profile_id: {profile_id}, time_granularity: {time_granularity}, num_periods: {num_periods}, year: {year}, categories: {categories}")
     profile = session.get(Profile, profile_id)
     if not profile:
+        logging.error(f"Profile with ID {profile_id} not found for budget_vs_expenses.")
         raise HTTPException(status_code=404, detail="Profile not found")
+    logging.info(f"Profile '{profile.name}' fetched for budget_vs_expenses.")
 
     # Fetch settings for the profile to get budgets
     budgets_db = session.exec(
@@ -813,6 +825,7 @@ async def get_budget_vs_expenses(
         )
         for b in budgets_db
     ]
+    logging.info(f"Fetched {len(budgets)} budgets for profile {profile_id}.")
 
     # Fetch transactions for the profile
     statement = select(Transaction).where(
@@ -823,22 +836,27 @@ async def get_budget_vs_expenses(
     if categories:  # Add condition to filter by categories
         statement = statement.where(Transaction.category.in_(categories))
     transactions = session.exec(statement).all()
+    logging.info(f"Fetched {len(transactions)} transactions for budget_vs_expenses.")
 
     # Convert transactions to a DataFrame for easier processing
     transactions_data = [t.dict() for t in transactions]
     expenses_df = pd.DataFrame(transactions_data)
+    logging.info(f"Created DataFrame with {len(expenses_df)} expenses.")
 
     # Filter for expenses (Amount < 0) and convert to absolute values
     if not expenses_df.empty:
         expenses_df["amount"] = expenses_df["amount"].abs()
         expenses_df["date"] = pd.to_datetime(expenses_df["date"])
+        logging.info("Processed expenses DataFrame: absolute amounts and datetime conversion.")
 
     # Generate historical periods
     today = datetime.now()
     if year:
         today = today.replace(year=year)
+    logging.info(f"Using 'today' as {today} for period generation.")
 
     historical_periods = get_periods_in_range(today, time_granularity, num_periods)
+    logging.info(f"Generated {len(historical_periods)} historical periods: {historical_periods}")
 
     # Initialize results structure
     results = []
@@ -855,14 +873,17 @@ async def get_budget_vs_expenses(
                     "over_budget": False,
                 }
             )
+    logging.info(f"Initialized results structure with {len(results)} entries.")
 
     results_df = pd.DataFrame(results)
     results_df.set_index(["period", "category"], inplace=True)
+    logging.info("Created results DataFrame.")
 
     if not expenses_df.empty:
         expenses_df["PeriodLabel"] = expenses_df["date"].apply(
             lambda x: get_period_label(x, time_granularity)
         )
+        logging.info("Added 'PeriodLabel' to expenses DataFrame.")
 
         actual_expenses_grouped = (
             expenses_df.groupby(["PeriodLabel", "category"])["amount"]
@@ -873,8 +894,10 @@ async def get_budget_vs_expenses(
             columns={"amount": "actual_expenses", "PeriodLabel": "period"}, inplace=True
         )
         actual_expenses_grouped.set_index(["period", "category"], inplace=True)
+        logging.info("Grouped actual expenses.")
 
         results_df.update(actual_expenses_grouped)
+        logging.info("Updated results DataFrame with actual expenses.")
 
     # Process Budgets
     for period_label in historical_periods:
@@ -883,6 +906,7 @@ async def get_budget_vs_expenses(
         target_month = (
             parsed_date.month if time_granularity == BudgetTimeWindow.MONTHLY else None
         )
+        logging.info(f"Processing budget for period {period_label}: year={target_year}, month={target_month}.")
 
         for (
             target_category
@@ -890,6 +914,7 @@ async def get_budget_vs_expenses(
             period_budget_amount = get_budget_for_period(
                 target_category, target_year, target_month, budgets
             )
+            logging.info(f"Budget for {target_category} in {period_label}: {period_budget_amount}")
 
             if (period_label, target_category) in results_df.index:
                 results_df.loc[(period_label, target_category), "budgeted_amount"] = (
@@ -903,5 +928,6 @@ async def get_budget_vs_expenses(
                     results_df.loc[(period_label, target_category), "actual_expenses"]
                     > results_df.loc[(period_label, target_category), "budgeted_amount"]
                 )
+    logging.info("Finished processing budgets.")
 
     return results_df.reset_index().to_dict(orient="records")
