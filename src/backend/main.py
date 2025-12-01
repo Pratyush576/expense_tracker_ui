@@ -110,6 +110,17 @@ class PaymentSourceResponse(BaseModel):
     note: Optional[str] = None
 
 
+# Define Pydantic model for creating a new transaction
+class TransactionCreate(BaseModel):
+    date: str
+    description: str
+    amount: float
+    payment_source: str
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    profile_id: int
+
+
 @app.post("/api/payment_sources", response_model=PaymentSourceResponse)
 def create_payment_source(
     payment_source: PaymentSourceCreate, session: Session = Depends(get_session)
@@ -160,6 +171,17 @@ def delete_payment_source(
     session.delete(payment_source)
     session.commit()
     return {"message": "Payment Source deleted successfully"}
+
+
+@app.post("/api/transactions", response_model=Transaction)
+def create_transaction(
+    transaction: TransactionCreate, session: Session = Depends(get_session)
+):
+    db_transaction = Transaction.model_validate(transaction)
+    session.add(db_transaction)
+    session.commit()
+    session.refresh(db_transaction)
+    return db_transaction
 
 
 # Define Category Pydantic Model
