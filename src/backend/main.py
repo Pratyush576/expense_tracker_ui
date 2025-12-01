@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine
-from backend.models import User, Profile, Transaction, Category, Rule, Budget
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType
 from backend.processing.rule_engine import RuleEngine
 
 app = FastAPI()
@@ -92,6 +92,74 @@ class ProfileResponse(BaseModel):
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     currency: Optional[str] = None
+
+
+# Define Pydantic models for PaymentSource
+class PaymentSourceCreate(BaseModel):
+    profile_id: int
+    payment_type: PaymentType
+    source_name: str
+    note: Optional[str] = None
+
+
+class PaymentSourceResponse(BaseModel):
+    id: int
+    profile_id: int
+    payment_type: PaymentType
+    source_name: str
+    note: Optional[str] = None
+
+
+@app.post("/api/payment_sources", response_model=PaymentSourceResponse)
+def create_payment_source(
+    payment_source: PaymentSourceCreate, session: Session = Depends(get_session)
+):
+    # Convert source_name to uppercase and replace spaces with underscores
+    processed_source_name = payment_source.source_name.upper().replace(" ", "_")
+    
+    # Check for existing payment source with the processed name for the same profile
+    existing_source = session.exec(
+        select(PaymentSource).where(
+            PaymentSource.profile_id == payment_source.profile_id,
+            PaymentSource.source_name == processed_source_name
+        )
+    ).first()
+
+    if existing_source:
+        raise HTTPException(status_code=400, detail="Payment source with this name already exists for this profile.")
+
+    db_payment_source = PaymentSource.model_validate(payment_source)
+    db_payment_source.source_name = processed_source_name # Assign the processed name
+    session.add(db_payment_source)
+    session.commit()
+    session.refresh(db_payment_source)
+    return db_payment_source
+
+
+@app.get("/api/profiles/{profile_id}/payment_sources", response_model=List[PaymentSourceResponse])
+def get_payment_sources_for_profile(
+    profile_id: int, session: Session = Depends(get_session)
+):
+    profile = session.get(Profile, profile_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    payment_sources = session.exec(
+        select(PaymentSource).where(PaymentSource.profile_id == profile_id)
+    ).all()
+    return payment_sources
+
+
+@app.delete("/api/payment_sources/{payment_source_id}")
+def delete_payment_source(
+    payment_source_id: int, session: Session = Depends(get_session)
+):
+    payment_source = session.get(PaymentSource, payment_source_id)
+    if not payment_source:
+        raise HTTPException(status_code=404, detail="Payment Source not found")
+    session.delete(payment_source)
+    session.commit()
+    return {"message": "Payment Source deleted successfully"}
 
 
 # Define Category Pydantic Model

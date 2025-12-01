@@ -1,6 +1,15 @@
 from typing import List, Optional
+from enum import Enum
 
 from sqlmodel import Field, Relationship, SQLModel
+
+
+class PaymentType(str, Enum):
+    CREDIT_CARD = "Credit Card"
+    DEBIT_CARD = "Debit Card"
+    ONLINE_BANKING = "Online Banking"
+    CASH = "Cash"
+    OTHER = "Other"
 
 
 class User(SQLModel, table=True):
@@ -24,6 +33,22 @@ class Profile(SQLModel, table=True):
     categories: List["Category"] = Relationship(back_populates="profile")
     rules: List["Rule"] = Relationship(back_populates="profile")
     budgets: List["Budget"] = Relationship(back_populates="profile")
+    payment_sources: List["PaymentSource"] = Relationship(back_populates="profile")
+
+
+class PaymentSource(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="profile.id", index=True)
+    payment_type: PaymentType = Field(default=PaymentType.OTHER)
+    source_name: str = Field(index=True) # e.g., "Visa ending in 1234", "My Bank Account"
+    note: Optional[str] = None
+
+    # Relationship to Profile
+    profile: "Profile" = Relationship(back_populates="payment_sources")
+
+    class Config:
+        # Ensure uniqueness for profile_id and source_name
+        unique_together = [("profile_id", "source_name")]
 
 
 class Transaction(SQLModel, table=True):
