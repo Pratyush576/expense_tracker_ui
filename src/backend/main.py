@@ -184,6 +184,22 @@ def create_transaction(
     return db_transaction
 
 
+@app.delete("/api/transactions/{transaction_id}")
+def delete_transaction(
+    transaction_id: int, profile_id: int, session: Session = Depends(get_session)
+):
+    transaction = session.exec(
+        select(Transaction).where(
+            Transaction.id == transaction_id, Transaction.profile_id == profile_id
+        )
+    ).first()
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    session.delete(transaction)
+    session.commit()
+    return {"message": "Transaction deleted successfully"}
+
+
 # Define Category Pydantic Model
 class CategoryModel(BaseModel):
     name: str
@@ -252,6 +268,35 @@ def get_profiles(session: Session = Depends(get_session)):
     profiles = session.exec(select(Profile)).all()
     logging.info(f"Found {len(profiles)} profiles in the database.")
     return profiles
+
+
+@app.get("/api/profiles/summary")
+def get_profiles_summary(session: Session = Depends(get_session)):
+    profiles = session.exec(select(Profile)).all()
+    summary_data = []
+    current_year = datetime.now().year
+
+    for profile in profiles:
+        transactions = session.exec(
+            select(Transaction).where(
+                Transaction.profile_id == profile.id,
+                Transaction.date.like(f"%/{current_year}")
+            )
+        ).all()
+
+        total_income = sum(t.amount for t in transactions if t.amount >= 0)
+        total_expenses = sum(t.amount for t in transactions if t.amount < 0)
+        net_income = total_income + total_expenses
+
+        summary_data.append({
+            "profile_id": profile.id,
+            "profile_name": profile.name,
+            "currency": profile.currency,
+            "total_income": total_income,
+            "total_expenses": total_expenses,
+            "net_income": net_income,
+        })
+    return summary_data
 
 
 @app.delete("/api/profiles/{profile_id}")
