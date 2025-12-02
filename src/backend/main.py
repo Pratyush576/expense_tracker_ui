@@ -41,6 +41,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ],  # Allow frontend origin
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
@@ -337,7 +338,7 @@ class AssetTypeCreate(BaseModel):
 
 
 class AssetTypeResponse(BaseModel):
-    id: int
+    id: str
     profile_id: int
     name: str
     subtypes: List[str]
@@ -352,7 +353,7 @@ class AssetTypeUpdate(BaseModel):
 class AssetCreate(BaseModel):
     profile_id: int
     date: str
-    asset_type_id: int
+    asset_type_id: str
     asset_type_name: str
     asset_subtype_name: Optional[str] = None
     value: float
@@ -363,7 +364,7 @@ class AssetResponse(BaseModel):
     id: int
     profile_id: int
     date: str
-    asset_type_id: int
+    asset_type_id: str
     asset_type_name: str
     asset_subtype_name: Optional[str] = None
     value: float
@@ -372,7 +373,7 @@ class AssetResponse(BaseModel):
 
 class AssetUpdate(BaseModel):
     date: Optional[str] = None
-    asset_type_id: Optional[int] = None
+    asset_type_id: Optional[str] = None
     asset_type_name: Optional[str] = None
     asset_subtype_name: Optional[str] = None
     value: Optional[float] = None
@@ -396,17 +397,36 @@ def create_asset_type(
 def get_asset_types_for_profile(
     profile_id: int, session: Session = Depends(get_session)
 ):
-    asset_types = session.exec(
-        select(AssetType).where(AssetType.profile_id == profile_id)
-    ).all()
-    for at in asset_types:
-        at.subtypes = json.loads(at.subtypes)
-    return asset_types
+
+    try:
+        asset_types = session.exec(
+            select(AssetType).where(AssetType.profile_id == profile_id)
+        ).all()
+        response_asset_types = []
+        for at in asset_types:
+            logging.info(f"Before json.loads: at.subtypes type={type(at.subtypes)}, value={at.subtypes}")
+            # Handle double-encoded JSON string
+            temp_subtypes = json.loads(at.subtypes) if at.subtypes else "[]"
+            parsed_subtypes = json.loads(temp_subtypes) if isinstance(temp_subtypes, str) else temp_subtypes
+            logging.info(f"After json.loads: parsed_subtypes type={type(parsed_subtypes)}, value={parsed_subtypes}")
+            logging.info(f"Before AssetTypeResponse: parsed_subtypes type={type(parsed_subtypes)}, value={parsed_subtypes}")
+            response_asset_types.append(
+                AssetTypeResponse(
+                    id=at.id,
+                    profile_id=at.profile_id,
+                    name=at.name,
+                    subtypes=parsed_subtypes
+                )
+            )
+        return response_asset_types
+    except Exception as e:
+        logging.error(f"Error fetching asset types for profile {profile_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @app.put("/api/asset_types/{asset_type_id}", response_model=AssetTypeResponse)
 def update_asset_type(
-    asset_type_id: int,
+    asset_type_id: str,
     asset_type_update: AssetTypeUpdate,
     session: Session = Depends(get_session),
 ):
@@ -424,13 +444,17 @@ def update_asset_type(
     session.add(db_asset_type)
     session.commit()
     session.refresh(db_asset_type)
-    db_asset_type.subtypes = json.loads(db_asset_type.subtypes)
-    return db_asset_type
+    return AssetTypeResponse(
+        id=db_asset_type.id,
+        profile_id=db_asset_type.profile_id,
+        name=db_asset_type.name,
+        subtypes=json.loads(db_asset_type.subtypes) if db_asset_type.subtypes else []
+    )
 
 
 @app.delete("/api/asset_types/{asset_type_id}")
 def delete_asset_type(
-    asset_type_id: int, session: Session = Depends(get_session)
+    asset_type_id: str, session: Session = Depends(get_session)
 ):
     asset_type = session.get(AssetType, asset_type_id)
     if not asset_type:

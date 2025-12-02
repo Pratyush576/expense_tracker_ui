@@ -1,7 +1,9 @@
 from typing import List, Optional
 from enum import Enum
+import uuid # Import uuid
 
 from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import UniqueConstraint # Import UniqueConstraint
 
 
 class PaymentType(str, Enum):
@@ -104,7 +106,7 @@ class Budget(SQLModel, table=True):
 
 
 class AssetType(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     name: str = Field(index=True)
     subtypes: str # JSON string
     profile_id: Optional[int] = Field(default=None, foreign_key="profile.id")
@@ -112,11 +114,14 @@ class AssetType(SQLModel, table=True):
     profile: Optional[Profile] = Relationship(back_populates="asset_types")
     assets: List["Asset"] = Relationship(back_populates="asset_type")
 
+    class Config:
+        table_args = (UniqueConstraint("profile_id", "name", "subtypes"),)
+
 
 class Asset(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date: str
-    asset_type_id: Optional[int] = Field(default=None, foreign_key="assettype.id")
+    asset_type_id: Optional[str] = Field(default=None, foreign_key="assettype.id") # Changed to str
     asset_type_name: str
     asset_subtype_name: Optional[str] = None
     value: float
