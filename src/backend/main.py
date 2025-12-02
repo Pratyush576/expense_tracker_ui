@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType
 from backend.processing.rule_engine import RuleEngine
 
 app = FastAPI()
@@ -40,6 +40,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:8000",
     ],  # Allow frontend origin
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
@@ -287,33 +288,12 @@ def get_profiles(include_hidden: bool = False, session: Session = Depends(get_se
     return profiles
 
 
-@app.get("/api/profiles/summary")
-def get_profiles_summary(session: Session = Depends(get_session)):
-    profiles = session.exec(select(Profile).where(Profile.is_hidden == False)).all()
-    summary_data = []
-    current_year = datetime.now().year
-
-    for profile in profiles:
-        transactions = session.exec(
-            select(Transaction).where(
-                Transaction.profile_id == profile.id,
-                Transaction.date.like(f"%/{current_year}")
-            )
-        ).all()
-
-        total_income = sum(t.amount for t in transactions if t.amount >= 0)
-        total_expenses = sum(t.amount for t in transactions if t.amount < 0)
-        net_income = total_income + total_expenses
-
-        summary_data.append({
-            "profile_id": profile.id,
-            "profile_name": profile.name,
-            "currency": profile.currency,
-            "total_income": total_income,
-            "total_expenses": total_expenses,
-            "net_income": net_income,
-        })
-    return summary_data
+@app.get("/api/profiles/{profile_id}", response_model=ProfileResponse)
+def get_profile(profile_id: int, session: Session = Depends(get_session)):
+    profile = session.get(Profile, profile_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
 
 
 @app.delete("/api/profiles/{profile_id}")
@@ -347,6 +327,207 @@ def update_profile(
     session.commit()
     session.refresh(profile)
     return profile
+
+
+# Define Pydantic models for AssetType
+class AssetTypeCreate(BaseModel):
+    profile_id: int
+    name: str
+    subtypes: List[str] = []
+
+
+class AssetTypeResponse(BaseModel):
+    id: int
+    profile_id: int
+    name: str
+    subtypes: List[str]
+
+
+class AssetTypeUpdate(BaseModel):
+    name: Optional[str] = None
+    subtypes: Optional[List[str]] = None
+
+
+# Define Pydantic models for Asset
+class AssetCreate(BaseModel):
+    profile_id: int
+    date: str
+    asset_type_id: int
+    asset_type_name: str
+    asset_subtype_name: Optional[str] = None
+    value: float
+    note: Optional[str] = None
+
+
+class AssetResponse(BaseModel):
+    id: int
+    profile_id: int
+    date: str
+    asset_type_id: int
+    asset_type_name: str
+    asset_subtype_name: Optional[str] = None
+    value: float
+    note: Optional[str] = None
+
+
+class AssetUpdate(BaseModel):
+    date: Optional[str] = None
+    asset_type_id: Optional[int] = None
+    asset_type_name: Optional[str] = None
+    asset_subtype_name: Optional[str] = None
+    value: Optional[float] = None
+    note: Optional[str] = None
+
+
+# API Endpoints for Asset Types
+@app.post("/api/asset_types", response_model=AssetTypeResponse)
+def create_asset_type(
+    asset_type: AssetTypeCreate, session: Session = Depends(get_session)
+):
+    db_asset_type = AssetType.model_validate(asset_type)
+    db_asset_type.subtypes = json.dumps(asset_type.subtypes)
+    session.add(db_asset_type)
+    session.commit()
+    session.refresh(db_asset_type)
+    return db_asset_type
+
+
+@app.get("/api/profiles/{profile_id}/asset_types", response_model=List[AssetTypeResponse])
+def get_asset_types_for_profile(
+    profile_id: int, session: Session = Depends(get_session)
+):
+    asset_types = session.exec(
+        select(AssetType).where(AssetType.profile_id == profile_id)
+    ).all()
+    for at in asset_types:
+        at.subtypes = json.loads(at.subtypes)
+    return asset_types
+
+
+@app.put("/api/asset_types/{asset_type_id}", response_model=AssetTypeResponse)
+def update_asset_type(
+    asset_type_id: int,
+    asset_type_update: AssetTypeUpdate,
+    session: Session = Depends(get_session),
+):
+    db_asset_type = session.get(AssetType, asset_type_id)
+    if not db_asset_type:
+        raise HTTPException(status_code=404, detail="Asset Type not found")
+
+    update_data = asset_type_update.model_dump(exclude_unset=True)
+    if "subtypes" in update_data:
+        update_data["subtypes"] = json.dumps(update_data["subtypes"])
+    
+    for key, value in update_data.items():
+        setattr(db_asset_type, key, value)
+
+    session.add(db_asset_type)
+    session.commit()
+    session.refresh(db_asset_type)
+    db_asset_type.subtypes = json.loads(db_asset_type.subtypes)
+    return db_asset_type
+
+
+@app.delete("/api/asset_types/{asset_type_id}")
+def delete_asset_type(
+    asset_type_id: int, session: Session = Depends(get_session)
+):
+    asset_type = session.get(AssetType, asset_type_id)
+    if not asset_type:
+        raise HTTPException(status_code=404, detail="Asset Type not found")
+    session.delete(asset_type)
+    session.commit()
+    return {"message": "Asset Type deleted successfully"}
+
+
+# API Endpoints for Assets
+@app.post("/api/assets", response_model=AssetResponse)
+def create_asset(
+    asset: AssetCreate, session: Session = Depends(get_session)
+):
+    db_asset = Asset.model_validate(asset)
+    session.add(db_asset)
+    session.commit()
+    session.refresh(db_asset)
+    return db_asset
+
+
+@app.get("/api/profiles/{profile_id}/assets", response_model=List[AssetResponse])
+def get_assets_for_profile(
+    profile_id: int,
+    year: Optional[int] = None,
+    asset_type_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+):
+    statement = select(Asset).where(Asset.profile_id == profile_id)
+    if year:
+        statement = statement.where(Asset.date.like(f"%/{year}"))
+    if asset_type_id:
+        statement = statement.where(Asset.asset_type_id == asset_type_id)
+    
+    assets = session.exec(statement).all()
+    return assets
+
+
+@app.get("/api/profiles/{profile_id}/assets/summary")
+def get_assets_summary_for_profile(
+    profile_id: int,
+    year: Optional[int] = None,
+    session: Session = Depends(get_session),
+):
+    statement = select(Asset).where(Asset.profile_id == profile_id)
+    if year:
+        statement = statement.where(Asset.date.like(f"%/{year}"))
+    
+    assets = session.exec(statement).all()
+
+    # Calculate total value per asset type
+    asset_type_summary = {}
+    for asset in assets:
+        if asset.asset_type_name not in asset_type_summary:
+            asset_type_summary[asset.asset_type_name] = 0
+        asset_type_summary[asset.asset_type_name] += asset.value
+    
+    # Calculate total portfolio value
+    total_portfolio_value = sum(asset.value for asset in assets)
+
+    return {
+        "total_portfolio_value": total_portfolio_value,
+        "asset_type_summary": asset_type_summary,
+        "assets": assets # Return all assets for detailed view if needed
+    }
+
+
+@app.put("/api/assets/{asset_id}", response_model=AssetResponse)
+def update_asset(
+    asset_id: int,
+    asset_update: AssetUpdate,
+    session: Session = Depends(get_session),
+):
+    db_asset = session.get(Asset, asset_id)
+    if not db_asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    update_data = asset_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_asset, key, value)
+
+    session.add(db_asset)
+    session.commit()
+    session.refresh(db_asset)
+    return db_asset
+
+
+@app.delete("/api/assets/{asset_id}")
+def delete_asset(
+    asset_id: int, session: Session = Depends(get_session)
+):
+    asset = session.get(Asset, asset_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    session.delete(asset)
+    session.commit()
+    return {"message": "Asset deleted successfully"}
 
 
 @app.get("/api/expenses")

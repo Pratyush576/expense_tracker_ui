@@ -13,6 +13,7 @@ class PaymentType(str, Enum):
 
 class ProfileType(str, Enum):
     EXPENSE_MANAGER = "EXPENSE_MANAGER"
+    ASSET_MANAGER = "ASSET_MANAGER"
 
 
 class User(SQLModel, table=True):
@@ -39,6 +40,8 @@ class Profile(SQLModel, table=True):
     rules: List["Rule"] = Relationship(back_populates="profile")
     budgets: List["Budget"] = Relationship(back_populates="profile")
     payment_sources: List["PaymentSource"] = Relationship(back_populates="profile")
+    asset_types: List["AssetType"] = Relationship(back_populates="profile") # New relationship
+    assets: List["Asset"] = Relationship(back_populates="profile") # New relationship
 
 
 class PaymentSource(SQLModel, table=True):
@@ -98,3 +101,27 @@ class Budget(SQLModel, table=True):
     profile_id: Optional[int] = Field(default=None, foreign_key="profile.id")
 
     profile: Optional[Profile] = Relationship(back_populates="budgets")
+
+
+class AssetType(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    subtypes: str # JSON string
+    profile_id: Optional[int] = Field(default=None, foreign_key="profile.id")
+
+    profile: Optional[Profile] = Relationship(back_populates="asset_types")
+    assets: List["Asset"] = Relationship(back_populates="asset_type")
+
+
+class Asset(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    date: str
+    asset_type_id: Optional[int] = Field(default=None, foreign_key="assettype.id")
+    asset_type_name: str
+    asset_subtype_name: Optional[str] = None
+    value: float
+    note: Optional[str] = None
+    profile_id: Optional[int] = Field(default=None, foreign_key="profile.id")
+
+    profile: Optional[Profile] = Relationship(back_populates="assets")
+    asset_type: Optional[AssetType] = Relationship(back_populates="assets")
