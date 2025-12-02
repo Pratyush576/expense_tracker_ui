@@ -11,6 +11,9 @@ class PaymentType(str, Enum):
     CASH = "Cash"
     OTHER = "Other"
 
+class ProfileType(str, Enum):
+    EXPENSE_MANAGER = "EXPENSE_MANAGER"
+
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -27,6 +30,7 @@ class Profile(SQLModel, table=True):
     name: str = Field(index=True)
     currency: str
     is_hidden: bool = Field(default=False) # New field for hiding profiles
+    profile_type: ProfileType = Field(default=ProfileType.EXPENSE_MANAGER) # New field for profile type
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
 
     user: Optional[User] = Relationship(back_populates="profiles")

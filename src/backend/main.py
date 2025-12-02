@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType
 from backend.processing.rule_engine import RuleEngine
 
 app = FastAPI()
@@ -77,7 +77,11 @@ def on_startup():
             session.execute(text("ALTER TABLE profile ADD COLUMN is_hidden BOOLEAN DEFAULT FALSE"))
             session.commit()
             print("Added 'is_hidden' column to 'profile' table with default FALSE.")
-
+        
+        if "profile_type" not in column_names:
+            session.execute(text("ALTER TABLE profile ADD COLUMN profile_type VARCHAR(20) DEFAULT 'EXPENSE_MANAGER'"))
+            session.commit()
+            print("Added 'profile_type' column to 'profile' table with default 'EXPENSE_MANAGER'.")
 
 
 # Define Pydantic models for API requests
@@ -85,6 +89,7 @@ class ProfileCreate(BaseModel):
     public_id: str
     name: str
     currency: str
+    profile_type: ProfileType = ProfileType.EXPENSE_MANAGER
 
 
 class ProfileResponse(BaseModel):
@@ -93,12 +98,14 @@ class ProfileResponse(BaseModel):
     name: str
     currency: str
     is_hidden: bool
+    profile_type: ProfileType
 
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     currency: Optional[str] = None
     is_hidden: Optional[bool] = None
+    profile_type: Optional[ProfileType] = None
 
 
 # Define Pydantic models for PaymentSource
@@ -263,7 +270,7 @@ def create_profile(profile: ProfileCreate, session: Session = Depends(get_sessio
     if not user:
         raise HTTPException(status_code=404, detail="No users found in the database.")
 
-    db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, user_id=user.id)
+    db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, profile_type=profile.profile_type, user_id=user.id)
     session.add(db_profile)
     session.commit()
     session.refresh(db_profile)
