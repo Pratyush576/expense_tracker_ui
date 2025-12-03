@@ -128,7 +128,7 @@ class Asset(SQLModel, table=True):
     asset_type_name: str
     asset_subtype_name: Optional[str] = None
     value: float
-    note: Optional[str] = None
+    note: Optional[str] = None # Added optional note field
     profile_id: Optional[int] = Field(default=None, foreign_key="profile.id")
 
     profile: Optional[Profile] = Relationship(back_populates="assets")

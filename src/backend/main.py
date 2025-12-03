@@ -266,13 +266,18 @@ class Settings(BaseModel):
 
 @app.post("/api/profiles", response_model=ProfileResponse)
 def create_profile(profile: ProfileCreate, session: Session = Depends(get_session)):
+    logging.info(f"Received profile_type: {profile.profile_type}, type: {type(profile.profile_type)}")
     # For now, associate with the first user found.
     # In a real application, you would get the user from the request's authentication info.
     user = session.exec(select(User)).first()
     if not user:
         raise HTTPException(status_code=404, detail="No users found in the database.")
 
-    db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, profile_type=profile.profile_type, user_id=user.id)
+    try:
+        db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, profile_type=profile.profile_type, user_id=user.id)
+    except ValidationError as e:
+        logging.error(f"Pydantic Validation Error creating profile: {e.errors()}")
+        raise HTTPException(status_code=422, detail=e.errors())
     session.add(db_profile)
     session.commit()
     session.refresh(db_profile)
@@ -477,6 +482,22 @@ def delete_asset_type(
 def create_asset(
     asset: AssetCreate, session: Session = Depends(get_session)
 ):
+    # Check if an asset with the same unique combination already exists
+    existing_asset = session.exec(
+        select(Asset).where(
+            Asset.profile_id == asset.profile_id,
+            Asset.date == asset.date,
+            Asset.asset_type_id == asset.asset_type_id,
+            Asset.asset_subtype_name == asset.asset_subtype_name
+        )
+    ).first()
+
+    if existing_asset:
+        raise HTTPException(
+            status_code=409,
+            detail="An asset for this profile, date, asset type, and subtype already exists. Please update the existing asset instead."
+        )
+
     db_asset = Asset.model_validate(asset)
     session.add(db_asset)
     session.commit()
@@ -528,6 +549,93 @@ def get_assets_summary_for_profile(
         "asset_type_summary": asset_type_summary,
         "assets": assets # Return all assets for detailed view if needed
     }
+
+
+@app.get("/api/profiles/{profile_id}/assets/total_latest_value")
+def get_total_latest_asset_value(
+    profile_id: int,
+    session: Session = Depends(get_session),
+):
+    assets = session.exec(
+        select(Asset).where(Asset.profile_id == profile_id)
+    ).all()
+
+    latest_assets = {} # Key: (asset_type_id, asset_subtype_name), Value: latest Asset object
+
+    for asset in assets:
+        # Parse current asset's date
+        current_asset_parsed_date = None
+        try:
+            current_asset_parsed_date = datetime.strptime(asset.date, "%m/%Y")
+        except ValueError:
+            try:
+                current_asset_parsed_date = datetime.strptime(asset.date, "%m/%d/%Y")
+            except ValueError:
+                logging.error(f"Could not parse date '{asset.date}' for asset ID {asset.id}. Skipping.")
+                continue # Skip this asset if date parsing fails
+        
+        key = (asset.asset_type_id, asset.asset_subtype_name)
+        
+        if key not in latest_assets:
+            latest_assets[key] = asset
+        else:
+            # Parse the date of the asset currently considered latest for this key
+            existing_latest_asset = latest_assets[key]
+            existing_latest_parsed_date = None
+            try:
+                existing_latest_parsed_date = datetime.strptime(existing_latest_asset.date, "%m/%Y")
+            except ValueError:
+                try:
+                    existing_latest_parsed_date = datetime.strptime(existing_latest_asset.date, "%m/%d/%Y")
+                except ValueError:
+                    logging.error(f"Could not parse date '{existing_latest_asset.date}' for existing latest asset ID {existing_latest_asset.id}. Skipping comparison for this key.")
+                    continue # Skip comparison for this key if its date cannot be parsed
+
+            # Compare dates
+            if current_asset_parsed_date > existing_latest_parsed_date:
+                latest_assets[key] = asset
+            elif current_asset_parsed_date == existing_latest_parsed_date and asset.id > existing_latest_asset.id:
+                # If dates are the same, pick the one with the higher ID (more recently added)
+                latest_assets[key] = asset
+
+    total_latest_asset_value = sum(asset.value for asset in latest_assets.values())
+    total_asset_value = sum(asset.value for asset in latest_assets.values() if asset.value >= 0)
+    total_debt_value = sum(asset.value for asset in latest_assets.values() if asset.value < 0)
+    return {
+        "total_latest_asset_value": total_latest_asset_value,
+        "total_asset_value": total_asset_value,
+        "total_debt_value": total_debt_value,
+    }
+
+
+@app.get("/api/profiles/{profile_id}/assets/monthly_summary")
+def get_monthly_asset_summary(
+    profile_id: int,
+    session: Session = Depends(get_session),
+):
+    assets = session.exec(
+        select(Asset).where(Asset.profile_id == profile_id)
+    ).all()
+
+    monthly_summary = {} # Key: (YearMonth, AssetType, AssetSubtype), Value: total_value
+
+    for asset in assets:
+        # Extract YearMonth from "MM/yyyy" date format
+        month, year = asset.date.split('/')
+        year_month = f"{year}-{month}" # Format as YYYY-MM for consistent sorting
+
+        key = (year_month, asset.asset_type_name, asset.asset_subtype_name)
+        monthly_summary[key] = monthly_summary.get(key, 0) + asset.value
+    
+    result = [
+        {"YearMonth": k[0], "AssetType": k[1], "AssetSubtype": k[2], "total_value": v}
+        for k, v in monthly_summary.items()
+    ]
+    
+    # Sort by YearMonth
+    result.sort(key=lambda x: x["YearMonth"])
+    
+    return result
 
 
 @app.put("/api/assets/{asset_id}", response_model=AssetResponse)

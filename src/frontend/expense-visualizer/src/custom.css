@@ -1,0 +1,346 @@
+/* src/frontend/expense-visualizer/src/custom.css */
+
+/* Custom Color Palette */
+:root {
+    --primary-color: #4a90e2; /* A vibrant blue */
+    --secondary-color: #50e3c2; /* A refreshing teal */
+    --accent-color: #f5a623; /* A warm orange for highlights */
+    --danger-color: #e74c3c; /* A standard red for danger actions */
+    --background-light: #f8f9fa; /* Light background */
+    --background-dark: #e9ecef; /* Slightly darker background */
+    --text-dark: #343a40; /* Dark text */
+    --text-light: #6c757d; /* Lighter text */
+    --border-color: #dee2e6; /* Standard border color */
+    --card-bg: #ffffff; /* Card background */
+    --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Subtle card shadow */
+    --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Slightly more pronounced hover shadow */
+}
+
+body {
+    font-family: 'Inter', sans-serif; /* Modern, clean font */
+    color: var(--text-dark);
+    background-color: var(--background-light);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+/* General Card Styling */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    background-color: var(--card-bg);
+}
+
+.card:hover {
+    box-shadow: var(--hover-shadow);
+}
+
+.card-header {
+    background-color: var(--primary-color);
+    color: white;
+    border-bottom: none;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+
+/* Button Styling */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: darken(var(--primary-color), 10%); /* Requires Sass or a JS helper */
+    border-color: darken(var(--primary-color), 10%);
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+    background-color: darken(var(--secondary-color), 10%);
+    border-color: darken(var(--secondary-color), 10%);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    transform: translateY(-1px);
+}
+
+/* Form Control Styling */
+.form-control {
+    border-radius: 8px;
+    border-color: var(--border-color);
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+}
+
+/* Tabs Styling */
+.nav-tabs {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-light);
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; /* To align with the border-bottom of nav-tabs */
+    transition: all 0.2s ease;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+    border-color: transparent transparent var(--primary-color) transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    background-color: transparent;
+    border-color: transparent transparent var(--primary-color) transparent;
+    font-weight: 600;
+}
+
+/* Specific Dashboard Card Overrides */
+.summary-card {
+    color: white; /* Default text color for summary cards */
+}
+
+.income-card {
+    background-color: var(--secondary-color) !important;
+}
+
+.expenses-card {
+    background-color: #e74c3c !important; /* A standard red */
+}
+
+.net-income-card {
+    background-color: var(--primary-color) !important;
+}
+
+/* Adjustments for specific components */
+.list-group-item {
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border-color: var(--border-color);
+}
+
+.list-group-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Chart specific styling (if needed, can be more granular) */
+.chart-container {
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    background-color: var(--card-bg);
+}
+
+/* Floating Labels (requires custom implementation or a library) */
+/* For now, just basic styling */
+.form-floating > .form-control,
+.form-floating > .form-control-plaintext,
+.form-floating > .form-select {
+  padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+  padding: 1rem 0.75rem;
+}
+
+/* Sidebar Styling */
+.sidebar-col {
+    background-color: var(--card-bg); /* Use card background for sidebar */
+    padding: 0.75rem; /* Further reduced padding */
+    border-right: 1px solid var(--border-color);
+    min-height: 100vh; /* Full height sidebar */
+    box-shadow: var(--card-shadow);
+}
+
+.sidebar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensure it takes full height of its parent */
+    justify-content: space-between; /* Pushes content to top and bottom */
+}
+
+.sidebar-bottom-buttons {
+    margin-top: auto; /* Pushes this div to the bottom */
+    padding-top: 10px; /* Add some padding above the buttons */
+    border-top: 1px solid var(--border-color); /* Optional: Add a separator line */
+}
+
+.sidebar-col h5 {
+    display: none; /* Hide the heading to save space */
+}
+
+.list-group-item {
+    border-radius: 6px; /* Slightly smaller border-radius */
+    margin-bottom: 2px; /* Further reduced margin */
+    border-color: var(--border-color);
+    transition: all 0.2s ease;
+    padding: 0.4rem 0.6rem; /* Further reduced padding */
+    font-size: 0.85rem; /* Slightly smaller font size */
+}
+
+.list-group-item:hover {
+    background-color: var(--background-dark);
+    transform: translateX(2px); /* Reduced hover effect */
+}
+
+/* Sidebar Profile Item Type Specific Styling */
+.profile-type-expense-manager {
+    background-color: #e6f7ff; /* Light blue for expense manager */
+    border-left: 4px solid var(--primary-color);
+}
+
+.profile-type-expense-manager.active {
+    background-color: var(--primary-color) !important;
+}
+
+.profile-type-asset-manager {
+    background-color: #fffbe6; /* Light yellow for asset manager */
+    border-left: 4px solid var(--accent-color);
+}
+
+.profile-type-asset-manager.active {
+    background-color: var(--accent-color) !important;
+}
+
+.list-group-item.active {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+    font-weight: 600;
+}
+
+.list-group-item.active .btn-outline-primary,
+.list-group-item.active .btn-outline-danger {
+    color: white;
+    border-color: white;
+}
+
+.list-group-item.active .btn-outline-primary:hover,
+.list-group-item.active .btn-outline-danger:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Icon-only button styling for compactness */
+.btn-icon-only {
+    padding: 0.15rem 0.3rem; /* Further smaller padding */
+    font-size: 0.75rem; /* Further smaller font size */
+    line-height: 1;
+    border-radius: 4px; /* Slightly smaller border-radius */
+}
+
+/* Sidebar Profile Item Expansion */
+.sidebar-profile-item {
+    overflow: hidden;
+    white-space: nowrap;
+    transition: width 0.3s ease, padding 0.3s ease;
+    width: 20px; /* Default width for just the flag */
+    justify-content: flex-start !important; /* Align flag to start when collapsed */
+}
+
+.sidebar-profile-item.expanded {
+    width: 150px; /* Expanded width to accommodate name and buttons */
+    justify-content: space-between !important; /* Distribute content when expanded */
+}
+
+.sidebar-profile-item .profile-name-on-hover {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin-left: 5px; /* Space between flag and name */
+}
+
+.sidebar-profile-item.expanded .profile-name-on-hover {
+    opacity: 1;
+}
+
+.sidebar-profile-item .profile-actions-on-hover {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-profile-item.expanded .profile-actions-on-hover {
+    opacity: 1;
+}
+
+
+/* Table Styling */
+.expense-table {
+    border-radius: 12px;
+    overflow: hidden; /* Ensures rounded corners apply to children */
+    box-shadow: var(--card-shadow);
+}
+
+.expense-table thead {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.expense-table th {
+    border-color: var(--primary-color);
+    padding: 1rem;
+}
+
+.expense-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.expense-table tbody tr:hover {
+    background-color: var(--background-dark);
+}
+
+.expense-table tbody td {
+    vertical-align: middle;
+    border-color: var(--border-color);
+    padding: 0.75rem 1rem;
+}
+
+/* Pagination Styling */
+.pagination .page-item .page-link {
+    border-radius: 8px;
+    margin: 0 3px;
+    color: var(--primary-color);
+    border-color: var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.pagination .page-item .page-link:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
