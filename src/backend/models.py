@@ -115,7 +115,10 @@ class AssetType(SQLModel, table=True):
     assets: List["Asset"] = Relationship(back_populates="asset_type")
 
     class Config:
-        table_args = (UniqueConstraint("profile_id", "name", "subtypes"),)
+        table_args = (
+            UniqueConstraint("profile_id", "name"),
+            UniqueConstraint("profile_id", "name", "subtypes"),
+        )
 
 
 class Asset(SQLModel, table=True):

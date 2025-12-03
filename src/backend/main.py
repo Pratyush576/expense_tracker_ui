@@ -385,12 +385,20 @@ class AssetUpdate(BaseModel):
 def create_asset_type(
     asset_type: AssetTypeCreate, session: Session = Depends(get_session)
 ):
-    db_asset_type = AssetType.model_validate(asset_type)
-    db_asset_type.subtypes = json.dumps(asset_type.subtypes)
+    db_asset_type = AssetType(
+        profile_id=asset_type.profile_id,
+        name=asset_type.name,
+        subtypes=json.dumps(asset_type.subtypes)
+    )
     session.add(db_asset_type)
     session.commit()
     session.refresh(db_asset_type)
-    return db_asset_type
+    return AssetTypeResponse(
+        id=db_asset_type.id,
+        profile_id=db_asset_type.profile_id,
+        name=db_asset_type.name,
+        subtypes=json.loads(db_asset_type.subtypes) if db_asset_type.subtypes else []
+    )
 
 
 @app.get("/api/profiles/{profile_id}/asset_types", response_model=List[AssetTypeResponse])
