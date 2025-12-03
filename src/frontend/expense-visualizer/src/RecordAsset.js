@@ -4,6 +4,8 @@ import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format, parse } from 'date-fns';
+import { ChevronDown, ChevronUp } from 'react-bootstrap-icons'; // Import icons
+import { formatCurrency } from './utils/currency';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -12,11 +14,25 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
     const [selectedSubtype, setSelectedSubtype] = useState('');
     const [assetValue, setAssetValue] = useState('');
     const [assetNote, setAssetNote] = useState('');
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedStartDate, setSelectedStartDate] = useState(new Date()); // New state for start date
+    const [selectedEndDate, setSelectedEndDate] = useState(new Date());   // New state for end date
     const [existingAssets, setExistingAssets] = useState([]);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [editingAssetId, setEditingAssetId] = useState(null); // New state for editing asset ID
+    const [originalAssetDate, setOriginalAssetDate] = useState(null); // New state to store original asset date for edit mode
+    const [collapsedGroups, setCollapsedGroups] = useState({}); // State to manage collapsed groups
+
+    // Helper to get months in range (MM/yyyy)
+    const getMonthsInRange = (startDate, endDate) => {
+        const dates = [];
+        let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        while (currentDate <= endDate) {
+            dates.push(format(currentDate, 'MM/yyyy'));
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        return dates;
+    };
 
     const fetchExistingAssets = useCallback(async () => {
         try {
@@ -28,6 +44,13 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
                 return dateB - dateA; // Sort in descending order (latest month at top)
             });
             setExistingAssets(sortedAssets);
+            // Initialize all groups as collapsed by default
+            const initialCollapsedState = {};
+            sortedAssets.forEach(asset => {
+                initialCollapsedState[asset.asset_type_name] = true; // Collapse asset type groups
+                initialCollapsedState[`${asset.asset_type_name}-${asset.asset_subtype_name || 'N/A'}`] = true; // Collapse subtype groups
+            });
+            setCollapsedGroups(initialCollapsedState);
         } catch (error) {
             console.error('Error fetching existing assets:', error);
             setError('Failed to fetch existing assets.');
@@ -47,8 +70,12 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
         setError('');
         setSuccess('');
 
-        if (!selectedAssetType || !assetValue || !selectedDate) {
-            setError('Please fill in all required fields (Asset Type, Value, Date).');
+        if (!selectedAssetType || !assetValue || !selectedStartDate || !selectedEndDate) {
+            setError('Please fill in all required fields (Asset Type, Value, Start Month, End Month).');
+            return;
+        }
+        if (selectedStartDate > selectedEndDate) {
+            setError('Start Month cannot be after End Month.');
             return;
         }
 
@@ -58,27 +85,48 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
             return;
         }
 
-        const formattedDate = format(selectedDate, 'MM/yyyy'); // Assuming MM/YYYY format for backend
+        const formattedStartDate = format(selectedStartDate, 'MM/yyyy');
 
-        const assetData = {
-            profile_id: profileId,
-            date: formattedDate,
-            asset_type_id: selectedAssetType,
-            asset_type_name: assetType.name,
-            asset_subtype_name: selectedSubtype || null,
-            value: parseFloat(assetValue),
-            note: assetNote || null, // Include the optional note
-        };
+        let successMessages = [];
+        let errorMessages = [];
 
         try {
+            const monthsToAffect = getMonthsInRange(selectedStartDate, selectedEndDate);
+            const assetsToProcess = [];
+            let originalAssetDeleted = false;
+
             if (editingAssetId) {
-                // Update existing asset
-                await axios.put(`${API_BASE_URL}/api/assets/${editingAssetId}`, assetData);
-                setSuccess('Asset updated successfully!');
-            } else {
-                // Create new asset
-                await axios.post(`${API_BASE_URL}/api/assets`, assetData);
-                setSuccess('Asset added successfully!');
+                // If original asset's date is not in the new range, delete it
+                if (originalAssetDate && !monthsToAffect.includes(originalAssetDate)) {
+                    await axios.delete(`${API_BASE_URL}/api/assets/${editingAssetId}`);
+                    successMessages.push(`Deleted original asset for ${originalAssetDate}.`);
+                    originalAssetDeleted = true;
+                }
+            }
+
+            for (const month of monthsToAffect) {
+                const assetData = {
+                    profile_id: profileId,
+                    date: month,
+                    asset_type_id: selectedAssetType,
+                    asset_type_name: assetType.name,
+                    asset_subtype_name: selectedSubtype || null,
+                    value: parseFloat(assetValue),
+                    note: assetNote || null,
+                };
+                assetsToProcess.push(assetData);
+            }
+
+            // Send bulk create/update request
+            await axios.post(`${API_BASE_URL}/api/assets`, { assets: assetsToProcess });
+            
+            if (editingAssetId && !originalAssetDeleted) {
+                successMessages.push(`Updated assets for ${monthsToAffect.length} months.`);
+            } else if (editingAssetId && originalAssetDeleted) {
+                successMessages.push(`Created/Updated assets for ${monthsToAffect.length} months.`);
+            }
+            else {
+                successMessages.push(`Assets recorded successfully for ${monthsToAffect.length} months.`);
             }
             
             fetchExistingAssets(); // Refresh the list of assets
@@ -89,17 +137,36 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
             setSelectedAssetType('');
             setSelectedSubtype('');
             setAssetValue('');
-            setAssetNote(''); // Clear the note field
-            setSelectedDate(new Date());
+            setAssetNote('');
+            setSelectedStartDate(new Date());
+            setSelectedEndDate(new Date());
             setEditingAssetId(null); // Exit edit mode
+            setOriginalAssetDate(null); // Clear original asset date
+
+            setSuccess(successMessages.join('\n'));
 
         } catch (err) {
             console.error('Error adding/updating asset:', err);
             if (err.response && err.response.data && err.response.data.detail) {
-                setError(err.response.data.detail);
+                if (Array.isArray(err.response.data.detail)) {
+                    const messages = err.response.data.detail.map(item => {
+                        if (typeof item === 'string') {
+                            return item;
+                        } else if (item && typeof item === 'object' && item.msg) {
+                            return item.msg;
+                        } else if (item && typeof item === 'object' && item.detail) {
+                            return item.detail;
+                        }
+                        return JSON.stringify(item);
+                    });
+                    errorMessages.push(messages.join('\n'));
+                } else {
+                    errorMessages.push(err.response.data.detail);
+                }
             } else {
-                setError('Failed to add/update asset.');
+                errorMessages.push('Failed to add/update asset.');
             }
+            setError(errorMessages.join('\n'));
         }
     };
 
@@ -123,10 +190,12 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
         setSelectedAssetType(asset.asset_type_id);
         setSelectedSubtype(asset.asset_subtype_name || '');
         setAssetValue(asset.value.toString());
-        // Parse the "MM/yyyy" string into a Date object
-        setSelectedDate(parse(asset.date, 'MM/yyyy', new Date()));
+        const assetDate = parse(asset.date, 'MM/yyyy', new Date());
+        setSelectedStartDate(assetDate);
+        setSelectedEndDate(assetDate);
         setAssetNote(asset.note || '');
         setEditingAssetId(asset.id);
+        setOriginalAssetDate(asset.date); // Store original date
     };
 
     const handleCancelEdit = () => {
@@ -134,8 +203,10 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
         setSelectedSubtype('');
         setAssetValue('');
         setAssetNote('');
-        setSelectedDate(new Date());
+        setSelectedStartDate(new Date());
+        setSelectedEndDate(new Date());
         setEditingAssetId(null);
+        setOriginalAssetDate(null); // Clear original asset date
         setError('');
         setSuccess('');
     };
@@ -143,6 +214,10 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
     const getAvailableSubtypes = () => {
         const assetType = assetTypes.find(at => at.id === selectedAssetType);
         return assetType ? assetType.subtypes : [];
+    };
+
+    const toggleGroup = (groupKey) => {
+        setCollapsedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }));
     };
 
     return (
@@ -154,11 +229,23 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
                 <Form>
                     <Row className="mb-3">
                         <Col md={4}>
-                            <Form.Group controlId="formAssetDate">
-                                <Form.Label>Date</Form.Label>
+                            <Form.Group controlId="formAssetStartDate">
+                                <Form.Label>Start Month/Year</Form.Label>
                                 <DatePicker
-                                    selected={selectedDate}
-                                    onChange={(date) => setSelectedDate(date)}
+                                    selected={selectedStartDate}
+                                    onChange={(date) => setSelectedStartDate(date)}
+                                    dateFormat="MM/yyyy"
+                                    showMonthYearPicker
+                                    className="form-control"
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group controlId="formAssetEndDate">
+                                <Form.Label>End Month/Year</Form.Label>
+                                <DatePicker
+                                    selected={selectedEndDate}
+                                    onChange={(date) => setSelectedEndDate(date)}
                                     dateFormat="MM/yyyy"
                                     showMonthYearPicker
                                     className="form-control"
@@ -176,6 +263,8 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
                                 </Form.Control>
                             </Form.Group>
                         </Col>
+                    </Row>
+                    <Row className="mb-3">
                         <Col md={4}>
                             <Form.Group controlId="formAssetSubtype">
                                 <Form.Label>Subtype</Form.Label>
@@ -243,30 +332,48 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
                         {/* Group assets by asset_type_name */}
                         {Object.entries(
                             existingAssets.reduce((acc, asset) => {
-                                const typeName = asset.asset_type_name;
-                                if (!acc[typeName]) {
-                                    acc[typeName] = [];
+                                const assetType = asset.asset_type_name;
+                                const assetSubtype = asset.asset_subtype_name || 'N/A'; // Use 'N/A' for assets without a subtype
+
+                                if (!acc[assetType]) {
+                                    acc[assetType] = {};
                                 }
-                                acc[typeName].push(asset);
+                                if (!acc[assetType][assetSubtype]) {
+                                    acc[assetType][assetSubtype] = [];
+                                }
+                                acc[assetType][assetSubtype].push(asset);
                                 return acc;
                             }, {})
-                        ).map(([typeName, assetsOfType]) => (
-                            <React.Fragment key={typeName}>
+                        ).map(([assetType, subtypesMap]) => (
+                            <React.Fragment key={assetType}>
                                 <tr className="table-primary">
-                                    <td colSpan="6"><strong>{typeName}</strong></td>
+                                    <td colSpan="6" onClick={() => toggleGroup(assetType)} style={{ cursor: 'pointer' }}>
+                                        <strong>Asset Type: {assetType}</strong>
+                                        {collapsedGroups[assetType] ? <ChevronDown className="ms-2" /> : <ChevronUp className="ms-2" />}
+                                    </td>
                                 </tr>
-                                {assetsOfType.map(asset => (
-                                    <tr key={asset.id}>
-                                        <td>{asset.date}</td>
-                                        <td>{asset.asset_type_name}</td>
-                                        <td>{asset.asset_subtype_name || 'N/A'}</td>
-                                        <td>{asset.value}</td>
-                                        <td>{asset.note || 'N/A'}</td>
-                                        <td>
-                                            <Button variant="info" size="sm" className="me-2" onClick={() => handleEditAsset(asset)}>Edit</Button>
-                                            <Button variant="danger" size="sm" onClick={() => handleDeleteAsset(asset.id)}>Delete</Button>
-                                        </td>
-                                    </tr>
+                                {!collapsedGroups[assetType] && Object.entries(subtypesMap).map(([subtype, assetsInSubtype]) => (
+                                    <React.Fragment key={subtype}>
+                                        <tr className="table-secondary">
+                                            <td colSpan="6" className="ps-4" onClick={() => toggleGroup(`${assetType}-${subtype}`)} style={{ cursor: 'pointer' }}>
+                                                <strong>Subtype: {subtype}</strong>
+                                                {collapsedGroups[`${assetType}-${subtype}`] ? <ChevronDown className="ms-2" /> : <ChevronUp className="ms-2" />}
+                                            </td>
+                                        </tr>
+                                        {!collapsedGroups[`${assetType}-${subtype}`] && assetsInSubtype.map(asset => (
+                                            <tr key={asset.id}>
+                                                <td>{asset.date}</td>
+                                                <td>{asset.asset_type_name}</td>
+                                                <td>{asset.asset_subtype_name || 'N/A'}</td>
+                                                <td>{asset.value}</td>
+                                                <td>{asset.note || 'N/A'}</td>
+                                                <td>
+                                                    <Button variant="info" size="sm" className="me-2" onClick={() => handleEditAsset(asset)}>Edit</Button>
+                                                    <Button variant="danger" size="sm" onClick={() => handleDeleteAsset(asset.id)}>Delete</Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
                                 ))}
                             </React.Fragment>
                         ))}

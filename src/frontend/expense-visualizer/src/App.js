@@ -49,6 +49,7 @@ function App() {
   const [selectedYearDashboard, setSelectedYearDashboard] = useState(new Date().getFullYear().toString());
   const [profiles, setProfiles] = useState([]);
   const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('activeProfileId'));
+  const [profileTypeLoaded, setProfileTypeLoaded] = useState(false); // New state for profile type loaded status
 
   console.log("App.js - activeProfileId at start:", activeProfileId);
   const API_BASE_URL = 'http://localhost:8000';
@@ -88,9 +89,13 @@ function App() {
           // For now, we'll just set a default currency.
           setSettings(prevSettings => ({ ...prevSettings, currency: profileResponse.data.currency }));
         }
+        setProfileTypeLoaded(true); // Set to true after activeProfileType is determined
       } catch (error) {
         console.error('Error fetching data: ', error);
+        setProfileTypeLoaded(true); // Also set to true on error to avoid infinite loading
       }
+    } else {
+      setProfileTypeLoaded(true); // If no activeProfileId, consider loaded
     }
   };
 
@@ -364,7 +369,7 @@ function App() {
             <Tab eventKey="home" title="Home">
               <HomePage onProfileSelect={handleProfileSelect} />
             </Tab>
-            {activeProfileId && (
+            {activeProfileId && profileTypeLoaded && (
               <Tab eventKey="profileDashboard" title="Profile Dashboard">
                 {activeProfileId ? (
                   <div>
@@ -658,7 +663,7 @@ function App() {
                 )}
               </Tab>
             )}
-            {activeProfileId && activeProfileType === "EXPENSE_MANAGER" && (
+            {activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
               <Tab eventKey="manualEntry" title="Record Transaction">
                 <ManualTransactionEntry
                   profileId={activeProfileId}
@@ -668,7 +673,7 @@ function App() {
                 />
               </Tab>
             )}
-            {activeProfileId && activeProfileType === "ASSET_MANAGER" && (
+            {activeProfileId && profileTypeLoaded && activeProfileType === "ASSET_MANAGER" && (
               <Tab eventKey="recordAsset" title="Record Asset">
                 <RecordAsset
                     profileId={activeProfileId}
@@ -677,12 +682,12 @@ function App() {
                 />
               </Tab>
             )}
-            {activeProfileId && activeProfileType === "EXPENSE_MANAGER" && (
+            {activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
               <Tab eventKey="rules" title="Rules">
                 <RulesTab settings={settings} onSave={handleSaveSettings} categories={settings.categories} paymentSources={paymentSources} />
               </Tab>
             )}
-            {activeProfileId && (
+            {activeProfileId && profileTypeLoaded && (
               <Tab eventKey="settings" title="Settings">
                 {activeProfileType === "EXPENSE_MANAGER" ? (
                     <Settings settings={settings} onSave={handleSaveSettings} profileId={activeProfileId} />

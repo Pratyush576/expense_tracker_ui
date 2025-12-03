@@ -478,31 +478,61 @@ def delete_asset_type(
 
 
 # API Endpoints for Assets
-@app.post("/api/assets", response_model=AssetResponse)
-def create_asset(
-    asset: AssetCreate, session: Session = Depends(get_session)
+class AssetCreateList(BaseModel):
+    assets: List[AssetCreate]
+
+@app.post("/api/assets", response_model=List[AssetResponse])
+def create_assets_bulk(
+    asset_list: AssetCreateList, session: Session = Depends(get_session)
 ):
-    # Check if an asset with the same unique combination already exists
-    existing_asset = session.exec(
-        select(Asset).where(
-            Asset.profile_id == asset.profile_id,
-            Asset.date == asset.date,
-            Asset.asset_type_id == asset.asset_type_id,
-            Asset.asset_subtype_name == asset.asset_subtype_name
-        )
-    ).first()
+    created_or_updated_assets = []
+    errors = []
 
-    if existing_asset:
-        raise HTTPException(
-            status_code=409,
-            detail="An asset for this profile, date, asset type, and subtype already exists. Please update the existing asset instead."
-        )
+    for asset_data in asset_list.assets:
+        try:
+            # Check if an asset with the same unique combination already exists
+            existing_asset = session.exec(
+                select(Asset).where(
+                    Asset.profile_id == asset_data.profile_id,
+                    Asset.date == asset_data.date,
+                    Asset.asset_type_id == asset_data.asset_type_id,
+                    Asset.asset_subtype_name == asset_data.asset_subtype_name
+                )
+            ).first()
 
-    db_asset = Asset.model_validate(asset)
-    session.add(db_asset)
-    session.commit()
-    session.refresh(db_asset)
-    return db_asset
+            if existing_asset:
+                # Update existing asset
+                for key, value in asset_data.model_dump(exclude_unset=True).items():
+                    setattr(existing_asset, key, value)
+                session.add(existing_asset)
+                session.commit()
+                session.refresh(existing_asset)
+                created_or_updated_assets.append(existing_asset)
+            else:
+                # Create new asset
+                db_asset = Asset.model_validate(asset_data)
+                session.add(db_asset)
+                session.commit()
+                session.refresh(db_asset)
+                created_or_updated_assets.append(db_asset)
+        except ValidationError as e:
+            logging.error(f"Pydantic ValidationError details: {e}")
+            error_details = e.errors()
+            formatted_errors = []
+            for err_item in error_details:
+                field = ".".join(err_item["loc"])
+                message = err_item["msg"]
+                formatted_errors.append(f"Validation error for {field}: {message}")
+            errors.append(f"Error processing asset for date {asset_data.date}: {'; '.join(formatted_errors)}")
+            session.rollback() # Rollback current transaction if an error occurs
+        except Exception as e:
+            errors.append(f"Error processing asset for date {asset_data.date}: {e}")
+            session.rollback() # Rollback current transaction if an error occurs
+
+    if errors:
+        raise HTTPException(status_code=400, detail=errors)
+    
+    return created_or_updated_assets
 
 
 @app.get("/api/profiles/{profile_id}/assets", response_model=List[AssetResponse])
