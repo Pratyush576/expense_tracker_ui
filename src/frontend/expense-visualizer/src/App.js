@@ -33,6 +33,17 @@ axios.interceptors.request.use(config => {
     return config;
 });
 
+axios.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            authService.logout();
+            window.location.href = '/login'; // Redirect to login page
+        }
+        return Promise.reject(error);
+    }
+);
+
 const PrivateRoute = ({ children }) => {
     const user = authService.getCurrentUser();
     return user ? children : <Navigate to="/login" />;
@@ -343,6 +354,11 @@ function MainApp() {
         })
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    const handleProfileSelect = (profileId) => {
+        setActiveProfileId(profileId);
+        setKey('profileDashboard'); // Switch to the profile dashboard tab
+    };
+
     return (
         <div className="container-fluid">
             <Row>
@@ -356,7 +372,7 @@ function MainApp() {
                     </div>
                     <Tabs activeKey={key} onSelect={(k) => setKey(k)} className="mb-3">
                         <Tab eventKey="home" title="Home">
-                            <HomePage onProfileSelect={setActiveProfileId} />
+                            <HomePage onProfileSelect={handleProfileSelect} />
                         </Tab>
                         {activeProfileId && profileTypeLoaded && (
                             <Tab eventKey="profileDashboard" title="Profile Dashboard">

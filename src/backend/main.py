@@ -106,6 +106,17 @@ class UserCreate(BaseModel):
     password: str
     user_first_name: str
     user_last_name: str
+    mobile_phone_number: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    user_first_name: Optional[str] = None
+    user_last_name: Optional[str] = None
+    mobile_phone_number: Optional[str] = None
+
+class PasswordReset(BaseModel):
+    old_password: str
+    new_password: str
+    confirm_new_password: str
 
 class Token(BaseModel):
     access_token: str
@@ -126,6 +137,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
         hashed_password=hashed_password,
         user_first_name=user.user_first_name,
         user_last_name=user.user_last_name,
+        mobile_phone_number=user.mobile_phone_number,
     )
     session.add(db_user)
     session.commit()
@@ -152,6 +164,37 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), ses
 @app.get("/api/users/me", response_model=User)
 def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
     return current_user
+
+
+@app.put("/api/users/me", response_model=User)
+def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
+    if user_update.user_first_name is not None:
+        current_user.user_first_name = user_update.user_first_name
+    if user_update.user_last_name is not None:
+        current_user.user_last_name = user_update.user_last_name
+    if user_update.mobile_phone_number is not None:
+        current_user.mobile_phone_number = user_update.mobile_phone_number
+    
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+
+@app.put("/api/users/me/password")
+def change_password_me(password_reset: PasswordReset, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
+    if not auth.verify_password(password_reset.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect old password")
+    if password_reset.new_password != password_reset.confirm_new_password:
+        raise HTTPException(status_code=400, detail="New passwords do not match")
+    if len(password_reset.new_password) > 72:
+        raise HTTPException(status_code=400, detail="New password must be 72 characters or fewer.")
+
+    current_user.hashed_password = auth.get_password_hash(password_reset.new_password)
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return {"message": "Password updated successfully"}
 
 
 # Define Pydantic models for API requests

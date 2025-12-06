@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { ListGroup, Button } from 'react-bootstrap'; // Import Tooltip and OverlayTrigger
-import { PlusCircle, Gear } from 'react-bootstrap-icons'; // Import icons, including PlusCircle and Gear
+import { ListGroup, Button, Dropdown } from 'react-bootstrap'; // Import Tooltip, OverlayTrigger, and Dropdown
+import { PlusCircle, PersonGear } from 'react-bootstrap-icons'; // Import icons, including PlusCircle and PersonGear
 import CreateProfileModal from './CreateProfileModal';
 import ManageProfilesModal from './ManageProfilesModal'; // Import ManageProfilesModal
+import UserProfileEditModal from './UserProfileEditModal'; // New: Import UserProfileEditModal
+import ChangePasswordModal from './ChangePasswordModal'; // New: Import ChangePasswordModal
 import { getFlagEmoji } from '../utils/currency'; // Import getFlagEmoji
 
 const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreateProfile, handleUpdateProfile, handleDeleteProfile, onProfileVisibilityChange }) => {
     const [showCreateProfileModal, setShowCreateProfileModal] = useState(false);
     const [showManageProfilesModal, setShowManageProfilesModal] = useState(false); // New state for manage profiles modal
+    const [showUserProfileEditModal, setShowUserProfileEditModal] = useState(false); // New state
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false); // New state
 
     const handleProfileClick = (profileId) => {
         setActiveProfileId(profileId);
@@ -35,9 +39,17 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
                 <Button variant="primary" className="mt-2 w-100 btn-icon-only" onClick={() => setShowCreateProfileModal(true)}> {/* Adjusted margin and width */}
                     <PlusCircle />
                 </Button>
-                <Button variant="secondary" className="mt-2 w-100 btn-icon-only" onClick={() => setShowManageProfilesModal(true)}>
-                    <Gear />
-                </Button>
+                <Dropdown className="mt-2 w-100">
+                    <Dropdown.Toggle as={Button} variant="secondary" id="dropdown-custom-components" className="w-100 btn-icon-only">
+                        <PersonGear />
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => setShowManageProfilesModal(true)}>Manage Profiles</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowUserProfileEditModal(true)}>Edit Profile</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowChangePasswordModal(true)}>Change Password</Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
             </div>
 
             <CreateProfileModal
@@ -49,9 +61,20 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
             <ManageProfilesModal
                 show={showManageProfilesModal}
                 handleClose={() => setShowManageProfilesModal(false)}
+                profiles={profiles} // Pass profiles to ManageProfilesModal
                 onProfileVisibilityChange={onProfileVisibilityChange}
                 handleUpdateProfile={handleUpdateProfile}
                 handleDeleteProfile={handleDeleteProfile}
+            />
+
+            <UserProfileEditModal
+                show={showUserProfileEditModal}
+                handleClose={() => setShowUserProfileEditModal(false)}
+            />
+
+            <ChangePasswordModal
+                show={showChangePasswordModal}
+                handleClose={() => setShowChangePasswordModal(false)}
             />
         </div>
     );

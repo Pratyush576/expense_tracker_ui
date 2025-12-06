@@ -9,6 +9,7 @@ const Signup = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [mobileNumber, setMobileNumber] = useState(''); // New state for mobile number
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Signup = () => {
         }
 
         try {
-            await authService.signup(email, password, firstName, lastName);
+            await authService.signup(email, password, firstName, lastName, mobileNumber); // Pass mobileNumber
             setSuccess('Account created successfully! Please log in.');
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
@@ -77,6 +78,17 @@ const Signup = () => {
                             />
                             <Form.Text className="text-muted">
                                 We'll never share your email with anyone else.
+                            </Form.Text>
+                        </Form.Group>
+                        <Form.Group id="mobileNumber">
+                            <Form.Label>Mobile Phone Number (Optional)</Form.Label>
+                            <Form.Control
+                                type="tel"
+                                value={mobileNumber}
+                                onChange={(e) => setMobileNumber(e.target.value)}
+                            />
+                            <Form.Text className="text-muted">
+                                Enter your mobile phone number (optional).
                             </Form.Text>
                         </Form.Group>
                         <Form.Group id="password">
