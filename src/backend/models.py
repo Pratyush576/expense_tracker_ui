@@ -22,6 +22,8 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
     hashed_password: str
+    user_first_name: Optional[str] = None
+    user_last_name: Optional[str] = None
     mobile_phone_number: Optional[str] = None
 
     profiles: List["Profile"] = Relationship(back_populates="user")

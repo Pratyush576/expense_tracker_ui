@@ -28,9 +28,11 @@ print(PROJECT_ROOT)
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
-from backend.database import create_db_and_tables, engine
+from backend.database import create_db_and_tables, engine, get_session
 from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType
 from backend.processing.rule_engine import RuleEngine
+from backend import auth
+from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI()
 
@@ -49,16 +51,28 @@ app.add_middleware(
 )
 
 
-def get_session():
-    with Session(engine) as session:
-        yield session
-
 
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
     with Session(engine) as session:
         inspector = inspect(engine)
+        
+        # Check for user table columns
+        if "user" in inspector.get_table_names():
+            user_columns = inspector.get_columns("user")
+            user_column_names = [col['name'] for col in user_columns]
+            
+            if "user_first_name" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN user_first_name VARCHAR(50) DEFAULT 'Default'"))
+                session.commit()
+                print("Added 'user_first_name' column to 'user' table.")
+            
+            if "user_last_name" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN user_last_name VARCHAR(50) DEFAULT 'Default'"))
+                session.commit()
+                print("Added 'user_last_name' column to 'user' table.")
+
         columns = inspector.get_columns("profile")
         column_names = [col['name'] for col in columns]
         if "public_id" not in column_names:
@@ -84,6 +98,60 @@ def on_startup():
             session.execute(text("ALTER TABLE profile ADD COLUMN profile_type VARCHAR(20) DEFAULT 'EXPENSE_MANAGER'"))
             session.commit()
             print("Added 'profile_type' column to 'profile' table with default 'EXPENSE_MANAGER'.")
+
+
+# Pydantic models for user authentication
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    user_first_name: str
+    user_last_name: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+@app.post("/api/users/signup", response_model=User)
+def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    db_user = auth.get_user(session, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    if len(user.password) > 72:
+        raise HTTPException(status_code=400, detail="Password must be 72 characters or fewer.")
+    
+    hashed_password = auth.get_password_hash(user.password)
+    db_user = User(
+        email=user.email,
+        hashed_password=hashed_password,
+        user_first_name=user.user_first_name,
+        user_last_name=user.user_last_name,
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return db_user
+
+
+@app.post("/api/users/login", response_model=Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    user = auth.get_user(session, email=form_data.username)
+    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/api/users/me", response_model=User)
+def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
+    return current_user
 
 
 # Define Pydantic models for API requests
@@ -265,16 +333,11 @@ class Settings(BaseModel):
 
 
 @app.post("/api/profiles", response_model=ProfileResponse)
-def create_profile(profile: ProfileCreate, session: Session = Depends(get_session)):
+def create_profile(profile: ProfileCreate, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
     logging.info(f"Received profile_type: {profile.profile_type}, type: {type(profile.profile_type)}")
-    # For now, associate with the first user found.
-    # In a real application, you would get the user from the request's authentication info.
-    user = session.exec(select(User)).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="No users found in the database.")
-
+    
     try:
-        db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, profile_type=profile.profile_type, user_id=user.id)
+        db_profile = Profile(public_id=profile.public_id, name=profile.name, currency=profile.currency, profile_type=profile.profile_type, user_id=current_user.id)
     except ValidationError as e:
         logging.error(f"Pydantic Validation Error creating profile: {e.errors()}")
         raise HTTPException(status_code=422, detail=e.errors())
@@ -285,12 +348,12 @@ def create_profile(profile: ProfileCreate, session: Session = Depends(get_sessio
 
 
 @app.get("/api/profiles", response_model=List[ProfileResponse])
-def get_profiles(include_hidden: bool = False, session: Session = Depends(get_session)):
+def get_profiles(include_hidden: bool = False, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
     if include_hidden:
-        profiles = session.exec(select(Profile)).all()
+        profiles = session.exec(select(Profile).where(Profile.user_id == current_user.id)).all()
     else:
-        profiles = session.exec(select(Profile).where(Profile.is_hidden == False)).all()
-    logging.info(f"Found {len(profiles)} profiles in the database (include_hidden={include_hidden}).")
+        profiles = session.exec(select(Profile).where(Profile.user_id == current_user.id, Profile.is_hidden == False)).all()
+    logging.info(f"Found {len(profiles)} profiles in the database for user {current_user.email} (include_hidden={include_hidden}).")
     return profiles
 
 

@@ -5,16 +5,22 @@ import {
 } from 'recharts';
 import { formatCurrency } from '../utils/currency';
 
-const MonthlyAssetComparisonChart = ({ data, currency }) => {
-    if (!data || data.length === 0) {
-        return <p>No monthly asset data available.</p>;
+const SubtypeDistributionChart = ({ data, currency, assetType }) => {
+    if (!data || data.length === 0 || !assetType) {
+        return <p>No data available for the selected asset type.</p>;
+    }
+
+    const filteredData = data.filter(item => item.AssetType === assetType);
+
+    if (filteredData.length === 0) {
+        return <p>No data available for {assetType}.</p>;
     }
 
     const processedDataMap = new Map();
 
-    data.forEach(item => {
-        const { YearMonth, AssetType, total_value } = item;
-        const key = AssetType;
+    filteredData.forEach(item => {
+        const { YearMonth, AssetSubtype, total_value } = item;
+        const key = AssetSubtype || 'N/A'; // Use 'N/A' for assets with no subtype
 
         if (!processedDataMap.has(YearMonth)) {
             processedDataMap.set(YearMonth, { YearMonth });
@@ -27,13 +33,11 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
         monthData[`${key} (Net)`] = (monthData[`${key} (Net)`] || 0) + total_value;
 
         monthData['Monthly Net Value'] = (monthData['Monthly Net Value'] || 0) + total_value;
-        monthData['Monthly Positive Value'] = (monthData['Monthly Positive Value'] || 0) + (total_value > 0 ? total_value : 0);
-        monthData['Monthly Negative Value'] = (monthData['Monthly Negative Value'] || 0) + (total_value < 0 ? total_value : 0);
     });
 
     const processedData = Array.from(processedDataMap.values());
 
-    const allKeys = Array.from(new Set(data.map(item => item.AssetType)));
+    const allKeys = Array.from(new Set(filteredData.map(item => item.AssetSubtype || 'N/A')));
 
     processedData.sort((a, b) => a.YearMonth.localeCompare(b.YearMonth));
 
@@ -41,7 +45,6 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
         if (active && payload && payload.length) {
             const netValues = {};
 
-            // Process bar chart payload
             payload.filter(p => p.dataKey.includes('(Positive)') || p.dataKey.includes('(Negative)')).forEach(entry => {
                 const key = entry.dataKey.replace(' (Positive)', '').replace(' (Negative)', '');
                 if (!netValues[key]) {
@@ -50,7 +53,6 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
                 netValues[key].value += entry.value;
             });
 
-            // Find the line chart payload for 'Monthly Net Value'
             const monthlyNetValuePayload = payload.find(p => p.dataKey === 'Monthly Net Value');
 
             return (
@@ -63,7 +65,7 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
                     ))}
                     {monthlyNetValuePayload && (
                         <p key={monthlyNetValuePayload.dataKey} style={{ color: monthlyNetValuePayload.stroke, fontWeight: 'bold' }}>
-                            {`${monthlyNetValuePayload.dataKey}: ${formatCurrency(monthlyNetValuePayload.value, currency)}`}
+                            {`Total Net Value: ${formatCurrency(monthlyNetValuePayload.value, currency)}`}
                         </p>
                     )}
                 </div>
@@ -79,25 +81,19 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
 
     const CustomLegend = (props) => {
         const { payload } = props;
-        const legendItems = payload.filter(item => item.dataKey !== 'Monthly Net Value'); // Exclude net value from this legend
+        const legendItems = payload.filter(item => item.dataKey !== 'Monthly Net Value');
 
-        // Group legend items by asset type/subtype combination
         const groupedItems = {};
         legendItems.forEach(item => {
             const baseKey = item.dataKey.replace(' (Positive)', '').replace(' (Negative)', '');
             if (!groupedItems[baseKey]) {
-                groupedItems[baseKey] = { positive: null, negative: null };
-            }
-            if (item.dataKey.includes('(Positive)')) {
-                groupedItems[baseKey].positive = item;
-            } else if (item.dataKey.includes('(Negative)')) {
-                groupedItems[baseKey].negative = item;
+                groupedItems[baseKey] = {};
             }
         });
 
         return (
             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
-                {Object.entries(groupedItems).map(([baseKey, { positive, negative }], index) => (
+                {Object.keys(groupedItems).map((baseKey, index) => (
                     <li key={baseKey} style={{ margin: '0 10px 5px 0', display: 'flex', alignItems: 'center' }}>
                         <span style={{
                             display: 'inline-block',
@@ -108,20 +104,18 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
                             borderRadius: '50%'
                         }}></span>
                         <span>{baseKey}</span>
-                        {/* Optionally show positive/negative indicators if needed */}
                     </li>
                 ))}
-                {/* Add Monthly Net Value to the legend separately */}
                 {payload.filter(item => item.dataKey === 'Monthly Net Value').map(item => (
                     <li key={item.dataKey} style={{ margin: '0 10px 5px 0', display: 'flex', alignItems: 'center' }}>
                         <span style={{
                             display: 'inline-block',
                             width: '10px',
-                            height: '2px', // Line indicator
+                            height: '2px',
                             backgroundColor: item.color,
                             marginRight: '5px',
                         }}></span>
-                        <span>{item.dataKey}</span>
+                        <span>Total Net Value</span>
                     </li>
                 ))}
             </ul>
@@ -153,4 +147,4 @@ const MonthlyAssetComparisonChart = ({ data, currency }) => {
     );
 };
 
-export default MonthlyAssetComparisonChart;
+export default SubtypeDistributionChart;
