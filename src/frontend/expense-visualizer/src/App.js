@@ -333,7 +333,6 @@ function MainApp() {
     ];
 
     const filteredTransactions = allTransactions
-        .filter(t => t.amount < 0)
         .filter(t => !excludedCategories.includes(t.category))
         .filter(t => t.description.toLowerCase().includes(descriptionFilter.toLowerCase()))
         .filter(t => paymentSourceFilter === "" || t.payment_source === paymentSourceFilter)
