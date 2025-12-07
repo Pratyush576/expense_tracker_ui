@@ -50,14 +50,17 @@ graph TD
     PrivateRoute --> MainApp;
 
     MainApp --> SideBar;
-    MainApp --> HomePage;
-    MainApp --> Tabs;
+    MainApp --> MainContent;
 
-    Tabs -->|activeProfileId| ProfileDashboardTab;
-    Tabs -->|activeProfileId| RecordTransactionTab;
-    Tabs -->|activeProfileId| RecordAssetTab;
-    Tabs -->|activeProfileId| RulesTab;
-    Tabs -->|activeProfileId| SettingsTab;
+    MainContent --> Tabs;
+    Tabs --> HomeTab[Home];
+    Tabs --> ProfileDashboardTab[Profile Dashboard];
+    Tabs --> RecordTransactionTab[Record Transaction];
+    Tabs --> RecordAssetTab[Record Asset];
+    Tabs --> RulesTab;
+    Tabs --> SettingsTab;
+
+    HomeTab --> HomePage;
 
     ProfileDashboardTab --> DashboardSubTabs;
     DashboardSubTabs --> OverviewTab;
@@ -70,7 +73,7 @@ graph TD
     OverviewTab --> PaymentSourcePieChart;
     OverviewTab --> PaymentSourceMonthlyBarChart;
     OverviewTab --> MonthlySummaryTable;
-    OverviewTab --> CategoryCostChart;
+    OverviewTAb --> CategoryCostChart;
     OverviewTab --> MonthlyStackedBarChart;
 
     SubcategoryTrendsTab --> CategorySubcategoryMonthlyCharts;
@@ -96,8 +99,7 @@ graph TD
 
 ### 3.3. Main Components
 
--   **App.js**: The root component of the application. It sets up the routing structure and distinguishes between public and private routes.
--   **MainApp.js**: The main container for the application's core functionality, rendered for authenticated users. It manages the main state, including profiles, transactions, and settings, and handles the layout of the main application.
+-   **App.js**: The root component of the application. It sets up the routing structure (distinguishing between public and private routes) and contains the `MainApp` component, which manages the main state (profiles, transactions, settings) and the layout for authenticated users.
 -   **Login.js**: A public component that provides a form for users to log in.
 -   **Signup.js**: A public component that provides a form for new users to register.
 -   **authService.js**: A utility module that encapsulates the logic for handling authentication-related API calls (login, signup, logout) and managing the user's authentication token in local storage.
@@ -134,6 +136,8 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 -   `/api/users/signup`: `POST` - Register a new user.
 -   `/api/users/login`: `POST` - Authenticate a user and get an access token.
 -   `/api/users/me`: `GET` - Get the details of the currently authenticated user.
+-   `/api/users/me`: `PUT` - Update the details of the currently authenticated user.
+-   `/api/users/me/password`: `PUT` - Change the password for the currently authenticated user.
 -   `/api/profiles`: `GET`, `POST` - Manage user profiles (requires authentication).
 -   `/api/profiles/{profile_id}`: `GET`, `PUT`, `DELETE` - Manage a specific profile.
 -   `/api/profiles/{profile_id}/payment_sources`: `GET` - Get payment sources for a profile.
@@ -163,7 +167,7 @@ erDiagram
     PROFILE ||--o{ CATEGORY : has
     PROFILE ||--o{ RULE : has
     PROFILE ||--o{ BUDGET : has
-    PROFILE ||--o{ PAYMEENT_SOURCE : has
+    PROFILE ||--o{ PAYMENT_SOURCE : has
     PROFILE ||--o{ ASSET_TYPE : has
     PROFILE ||--o{ ASSET : has
     ASSET_TYPE ||--o{ ASSET : has

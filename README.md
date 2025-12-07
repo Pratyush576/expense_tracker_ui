@@ -1,131 +1,146 @@
-# Expense Tracker UI
+# Expense Tracker
 
-This document provides a detailed overview of the architecture, API, and workflow of the Expense Tracker UI.
+This document provides a comprehensive overview of the Expense Tracker application, including its architecture, features, API, and setup instructions.
 
-## 1. Architecture
+## 1. Overview
 
-The Expense Tracker UI is composed of two main parts:
+The Expense Tracker is a web-based application designed to help users track their expenses and manage their personal finances. It features a React-based frontend and a FastAPI-based backend, providing a robust and scalable solution for personal finance management.
 
--   **Frontend**: A React application responsible for rendering the user interface and interacting with the backend.
--   **Backend**: A FastAPI application that provides a RESTful API to the frontend for data retrieval and manipulation.
+The application supports:
+-   **User Authentication**: Secure user registration and login.
+-   **Multiple Profiles**: Manage different financial profiles (e.g., personal, business).
+-   **Expense and Income Tracking**: Record and categorize transactions.
+-   **Asset Management**: Track financial assets and their performance over time.
+-   **Budgeting**: Set and monitor budgets for different expense categories.
+-   **Automated Categorization**: Define rules to automatically categorize transactions.
+-   **Data Visualization**: Interactive charts and tables to analyze financial data.
 
-### 1.1. Frontend (React)
+## 2. Architecture
+
+The application follows a client-server architecture, with a React frontend communicating with a FastAPI backend via a RESTful API.
+
+### 2.1. Frontend (React)
 
 The frontend is a single-page application (SPA) built with [React](https://reactjs.org/). It uses [React Bootstrap](https://react-bootstrap.github.io/) for UI components and [Chart.js](https://www.chartjs.org/) and [Recharts](https://recharts.org/) for data visualization.
 
-The main components of the frontend are:
+**Main Components:**
 
--   `App.js`: The main component that manages the application's state and renders all other components.
--   `SideBar.js`: A sidebar component for managing user profiles.
--   `Dashboard.js`: The main dashboard layout component.
--   `ExpenseTable.js`: Displays a filterable and sortable table of all transactions.
--   `Settings.js`: Allows users to manage their expense categories.
--   `RulesTab.js`: Provides an interface for creating and managing categorization rules using the `ComplexRuleBuilder`.
--   **Chart Components**: A set of components for visualizing expense data, including:
-    -   `BudgetVisualization.js`: Compares budgeted amounts vs. actual expenses.
-    -   `CategoryPieChart.js`: Shows the distribution of expenses by category.
-    -   `ExpenseChart.js`: Compares income and expenses over time.
-    -   `MonthlyBarChart.js`: A monthly summary of income, expenses, and net income.
-    -   `MonthlyCategoryLineChart.js`: Shows the trend of expenses for each category over months.
-    -   `MonthlyStackedBarChart.js`: A monthly stacked bar chart of expenses by category.
-    -   `CategorySubcategoryMonthlyCharts.js`: Detailed monthly charts for categories and subcategories.
-    -   `PaymentSourcePieChart.js`: A pie chart of expenses by payment source.
-    -   `PaymentSourceMonthlyBarChart.js`: A monthly bar chart of expenses by payment source.
-    -   `SubcategoryMonthlyLineChart.js`: A monthly line chart for subcategory expenses.
--   `ComplexRuleBuilder.js`: A form for building complex rules with multiple conditions.
--   `ConfirmationModal.js`: A modal for confirming user actions.
--   `CreateProfileModal.js`: A modal for creating new user profiles.
+-   `App.js`: The root component that handles routing and manages the main application state.
+-   `Login.js` / `Signup.js`: Components for user authentication.
+-   `SideBar.js`: For managing and switching between user profiles.
+-   `HomePage.js`: The main landing page after login.
+-   `Dashboard.js`: The primary dashboard for visualizing expenses, income, and budgets.
+-   `AssetDashboard.js`: A dedicated dashboard for managing and visualizing financial assets.
+-   `ManualTransactionEntry.js`: A form for manually adding transactions.
+-   `RecordAsset.js`: A form for recording new assets.
+-   `ExpenseTable.js`: A detailed, filterable table of all transactions.
+-   `Settings.js`: For managing expense categories, subcategories, and payment sources.
+-   `RulesTab.js`: An interface for creating and managing transaction categorization rules.
+-   **Chart Components**: A variety of components for data visualization, including pie charts, bar charts, and line charts for expenses, assets, and budgets.
 
-### 1.2. Backend (FastAPI)
+### 2.2. Backend (FastAPI)
 
-The backend is a Python application built with the [FastAPI](https://fastapi.tiangolo.com/) framework. It uses a SQLite database via [SQLModel](https://sqlmodel.tiangolo.com/) to store and manage data.
+The backend is a Python application built with [FastAPI](https://fastapi.tiangolo.com/), using [SQLModel](https://sqlmodel.tiangolo.com/) for database interaction with a SQLite database.
 
-The backend is responsible for:
+**Key Features:**
 
--   Providing a RESTful API for the frontend.
--   Managing users, profiles, transactions, categories, rules, and budgets.
--   Applying categorization rules to transactions using the `RuleEngine`.
--   Migrating data from older CSV/JSON formats to the database.
+-   **RESTful API**: Exposes endpoints for all application functionalities.
+-   **User and Profile Management**: Handles user authentication and manages user-specific profiles.
+-   **Data Processing**: Includes a `RuleEngine` for automated transaction categorization.
+-   **Database Models**:
+    -   `User`: Stores user credentials and personal information.
+    -   `Profile`: Manages different user profiles (e.g., for expense tracking or asset management).
+    -   `Transaction`: Stores all financial transactions.
+    -   `Category`: Defines user-customizable expense categories.
+    -   `Rule`: Stores rules for automatic transaction categorization.
+    -   `Budget`: Manages budgets for different categories.
+    -   `PaymentSource`: Stores information about different payment methods.
+    -   `AssetType`: Defines types of assets (e.g., stocks, real estate).
+    -   `Asset`: Stores records of asset values over time.
 
-The database schema includes the following models:
--   `User`: Stores user information.
--   `Profile`: Stores user-specific profiles, including currency settings.
--   `Transaction`: Stores individual financial transactions.
--   `Category`: Stores user-defined expense categories and subcategories.
--   `Rule`: Stores complex, multi-conditional rules for transaction categorization.
--   `Budget`: Stores monthly and annual budgets for expense categories.
+## 3. API Documentation
 
-## 2. API Documentation
+The backend provides a comprehensive set of RESTful API endpoints.
 
-The backend exposes the following RESTful API endpoints:
+### User Authentication
+-   `POST /api/users/signup`: Register a new user.
+-   `POST /api/users/login`: Authenticate a user and receive a JWT token.
+-   `GET /api/users/me`: Get the current user's details.
+-   `PUT /api/users/me`: Update the current user's details.
+-   `PUT /api/users/me/password`: Change the current user's password.
 
-### GET `/api/profiles`
--   **Description**: Retrieves all profiles for the current user.
+### Profiles
+-   `GET, POST /api/profiles`: Get all profiles or create a new one.
+-   `GET, PUT, DELETE /api/profiles/{profile_id}`: Manage a specific profile.
 
-### POST `/api/profiles`
--   **Description**: Creates a new profile for the current user.
+### Transactions and Expenses
+-   `POST, DELETE /api/transactions`: Create or delete a transaction.
+-   `GET /api/expenses`: Get all income and expense transactions for a profile.
+-   `GET /api/category_costs`: Get total costs per expense category.
+-   `GET /api/monthly_category_expenses`: Get monthly expenses per category.
 
-### GET `/api/expenses`
--   **Description**: Retrieves all income and expense transactions for a given profile.
+### Payment Sources
+-   `GET /api/profiles/{profile_id}/payment_sources`: Get all payment sources for a profile.
+-   `POST, DELETE /api/payment_sources`: Create or delete a payment source.
 
-### GET `/api/category_costs`
--   **Description**: Retrieves the total cost for each expense category for a given profile.
+### Assets
+-   `GET, POST /api/asset_types`: Get all asset types or create a new one.
+-   `PUT, DELETE /api/asset_types/{asset_type_id}`: Manage a specific asset type.
+-   `GET, POST /api/assets`: Get all assets or create a new one.
+-   `PUT, DELETE /api/assets/{asset_id}`: Manage a specific asset.
+-   `GET /api/profiles/{profile_id}/assets/summary`: Get a summary of assets for a profile.
 
-### GET `/api/monthly_category_expenses`
--   **Description**: Retrieves the total cost for each expense category, aggregated by month, for a given profile.
+### Settings and Rules
+-   `POST /api/settings`: Update settings for a profile (categories, rules, budgets).
 
-### GET `/api/payment_sources`
--   **Description**: Retrieves a list of all unique payment sources for a given profile.
+## 4. Application Flow
 
-### POST `/api/expenses`
--   **Description**: Saves the user's settings (categories and rules) for a given profile.
+1.  **User Authentication**: The user signs up or logs in to access the application.
+2.  **Profile Management**: After logging in, the user can create and manage multiple profiles from the `SideBar`.
+3.  **Dashboard**: The user selects a profile to view the corresponding dashboard (either for expense management or asset tracking).
+4.  **Transaction Management**: In an expense profile, the user can manually add transactions, view them in a filterable table, and see them visualized in various charts.
+5.  **Asset Management**: In an asset profile, the user can record asset values over time and track the performance of their portfolio.
+6.  **Settings**: The user can customize the application by defining expense categories, payment sources, and asset types.
+7.  **Rule Engine**: The user can create rules to automate the categorization of new transactions.
 
-### PUT `/api/transactions/category`
--   **Description**: Updates the category of a single transaction.
+## 5. Installation and Usage
 
-### GET `/api/budget_vs_expenses`
--   **Description**: Retrieves a comparison of budgeted amounts versus actual expenses for a given profile.
+### Prerequisites
+-   Python 3.7+
+-   Node.js and npm
 
-## 3. Application Flow
+### Backend Setup
 
-The application flow is as follows:
-
-1.  **Data Migration**: If running for the first time, the `src/backend/migrate_data.py` script is executed to migrate data from `consolidated_expenses.csv` and `user_settings.json` to the SQLite database.
-2.  **UI Initialization**: When the user opens the Expense Tracker UI, the `App.js` component fetches the available user profiles.
-3.  **Profile Selection**: The user selects a profile from the `SideBar`. If no profiles exist, the user can create one.
-4.  **Dashboard View**: The "Dashboard" tab displays an overview of the user's finances for the selected profile, including:
-    -   Total income, expenses, and net income.
-    -   Various charts and tables visualizing the expense data.
-    -   A detailed table of all transactions.
-5.  **Filtering**: The user can filter the transaction table by description, payment source, and date.
-6.  **Rule Management**: In the "Rules" tab, the user can create, view, and delete complex categorization rules using the `ComplexRuleBuilder`.
-7.  **Settings Management**: In the "Settings" tab, the user can add, edit, and delete expense categories and subcategories.
-8.  **Budget Management**: The user can set monthly or annual budgets for different expense categories. The `BudgetVisualization` component helps track performance against these budgets.
-9.  **Transaction Categorization**: The user can manually change the category of a transaction directly from the expense table.
-
-## 4. Installation and Usage
-
-### Backend
-
-1.  **Run the data migration (first time only):**
+1.  **Navigate to the backend directory:**
     ```bash
-    python src/backend/migrate_data.py
+    cd src/backend
     ```
 
-2.  **Run the backend server:**
-    Navigate to the `expense_tracker_ui/src/backend` directory and run:
+2.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Run the backend server:**
     ```bash
     uvicorn main:app --reload
     ```
-    The backend server will start on `http://localhost:8000`.
+    The backend will be available at `http://localhost:8000`.
 
-### Frontend
+### Frontend Setup
 
-To run the frontend application, navigate to the `expense_tracker_ui/frontend/expense-visualizer` directory and run:
+1.  **Navigate to the frontend directory:**
+    ```bash
+    cd src/frontend/expense-visualizer
+    ```
 
-```bash
-npm install
-npm start
-```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-The frontend development server will start, and the UI will be accessible at `http://localhost:3000`.
+3.  **Start the development server:**
+    ```bash
+    npm start
+    ```
+    The frontend will be accessible at `http://localhost:3000`.
