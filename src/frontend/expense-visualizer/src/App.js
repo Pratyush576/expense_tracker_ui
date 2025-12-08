@@ -18,6 +18,7 @@ import RulesTab from './RulesTab';
 import ManualTransactionEntry from './ManualTransactionEntry';
 import HomePage from './HomePage';
 import { Tab, Tabs, Row, Col, Alert, Button } from 'react-bootstrap';
+import { LockFill } from 'react-bootstrap-icons';
 import { formatCurrency } from './utils/currency';
 import SideBar from './components/SideBar';
 import AssetDashboard from './components/AssetDashboard';
@@ -405,222 +406,249 @@ function MainApp() {
                         <Tab eventKey="home" title="Home">
                             <HomePage onProfileSelect={handleProfileSelect} />
                         </Tab>
-                        {activeProfileId && profileTypeLoaded && (
-                            <Tab eventKey="profileDashboard" title="Profile Dashboard">
-                                {activeProfileId ? (
-                                    <div>
-                                        <div className="row">
-                                            <div className="col-lg-12 mb-4">
-                                                <div className="card">
-                                                    <div className="card-body">
-                                                        <div className="d-flex justify-content-end">
-                                                            <div className="col-md-3">
-                                                                <label htmlFor="yearSelectDashboard" className="form-label">Select Year:</label>
-                                                                <select
-                                                                    id="yearSelectDashboard"
-                                                                    className="form-control"
-                                                                    value={selectedYearDashboard}
-                                                                    onChange={e => setSelectedYearDashboard(e.target.value)}
-                                                                >
-                                                                    {years.map(year => (
-                                                                        <option key={year} value={year}>{year}</option>
-                                                                    ))}
-                                                                </select>
+
+                        {currentUser?.is_premium ? (
+                            activeProfileId && profileTypeLoaded && (
+                                <Tab eventKey="profileDashboard" title="Profile Dashboard">
+                                    {activeProfileId ? (
+                                        <div>
+                                            <div className="row">
+                                                <div className="col-lg-12 mb-4">
+                                                    <div className="card">
+                                                        <div className="card-body">
+                                                            <div className="d-flex justify-content-end">
+                                                                <div className="col-md-3">
+                                                                    <label htmlFor="yearSelectDashboard" className="form-label">Select Year:</label>
+                                                                    <select
+                                                                        id="yearSelectDashboard"
+                                                                        className="form-control"
+                                                                        value={selectedYearDashboard}
+                                                                        onChange={e => setSelectedYearDashboard(e.target.value)}
+                                                                    >
+                                                                        {years.map(year => (
+                                                                            <option key={year} value={year}>{year}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            {activeProfileType === "EXPENSE_MANAGER" && (
+                                                <Tabs activeKey={dashboardSubTabKey} onSelect={(k) => setDashboardSubTabKey(k)} className="mb-3">
+                                                    <Tab eventKey="overview" title="Overview">
+                                                        <div className="row">
+                                                            <div className="col-lg-4">
+                                                                <div className="card summary-card income-card mb-3">
+                                                                    <div className="card-header">Total Income</div>
+                                                                    <div className="card-body">
+                                                                        <h5 className="card-title">{formatCurrency(totalIncome, settings.currency)}</h5>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="col-lg-4">
+                                                                <div className="card summary-card expenses-card mb-3">
+                                                                    <div className="card-header">Total Expenses</div>
+                                                                    <div className="card-body">
+                                                                        <h5 className="card-title">{formatCurrency(totalExpenses, settings.currency)}</h5>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="col-lg-4">
+                                                                <div className="card summary-card net-income-card mb-3">
+                                                                    <div className="card-header">Net Income</div>
+                                                                    <div className="card-body">
+                                                                        <h5 className="card-title">{formatCurrency(netIncome, settings.currency)}</h5>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="row">
+                                                            <div className="col-lg-6">
+                                                                <div className="card mb-4 shadow-lg">
+                                                                    <div className="card-header">
+                                                                        Expenses by Payment Source
+                                                                    </div>
+                                                                    <div className="card-body">
+                                                                        <PaymentSourcePieChart expenses={expenses} currency={settings.currency} />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="col-lg-6">
+                                                                <div className="card mb-4 shadow-lg">
+                                                                    <div className="card-header">
+                                                                        Payment Source Specific Monthly Overview
+                                                                    </div>
+                                                                    <div className="card-body">
+                                                                        <div className="row mb-3">
+                                                                            <div className="col-md-4">
+                                                                                <select
+                                                                                    className="form-control"
+                                                                                    value={selectedPaymentSourceForChart}
+                                                                                    onChange={e => setSelectedPaymentSourceForChart(e.target.value)}
+                                                                                >
+                                                                                    <option value="">All Payment Sources</option>
+                                                                                    {paymentSources.map(source => (
+                                                                                        <option key={source} value={source}>{source}</option>
+                                                                                    ))}
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <PaymentSourceMonthlyBarChart
+                                                                            income={income}
+                                                                            expenses={expenses}
+                                                                            selectedPaymentSource={selectedPaymentSourceForChart}
+                                                                            currency={settings.currency}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="row">
+                                                            <div className="col-lg-12">
+                                                                <div className="card mb-4 shadow-lg">
+                                                                    <div className="card-header">
+                                                                        Monthly Overview
+                                                                    </div>
+                                                                    <div className="card-body">
+                                                                        <div className="row mb-3">
+                                                                            <div className="col-md-6">
+                                                                                <select
+                                                                                    className="form-control"
+                                                                                    value={selectedPaymentSourceForMonthlyTable}
+                                                                                    onChange={e => setSelectedPaymentSourceForMonthlyTable(e.target.value)}
+                                                                                >
+                                                                                    <option value="">All Payment Sources</option>
+                                                                                    {paymentSources.map(source => (
+                                                                                        <option key={source} value={source}>{source}</option>
+                                                                                    ))}
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <MonthlySummaryTable
+                                                                            income={income}
+                                                                            expenses={expenses}
+                                                                            selectedPaymentSource={selectedPaymentSourceForMonthlyTable}
+                                                                            currency={settings.currency}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="row">
+                                                            <div className="col-lg-12">
+                                                                <div className="card mb-4 shadow-lg" style={{ position: 'relative', zIndex: 0 }}>
+                                                                    <CategoryCostChart data={categoryCostData} budgets={settings.budgets} selectedYear={selectedYearDashboard} currency={settings.currency} />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="row mt-4">
+                                                            <div className="col-lg-12">
+                                                                <div className="card mb-4 shadow-lg" style={{ position: 'relative', zIndex: 1 }}>
+                                                                    <MonthlyStackedBarChart data={monthlyCategoryExpenses} excludedCategories={excludedCategories} budgets={settings.budgets} currency={settings.currency} />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Tab>
+                                                    <Tab eventKey="subcategoryTrends" title="Subcategory Trends">
+                                                        <div className="row mt-4">
+                                                            <div className="col-lg-12">
+                                                                <CategorySubcategoryMonthlyCharts data={monthlyCategoryExpenses} excludedCategories={excludedCategories} budgets={settings.budgets} selectedYear={selectedYearDashboard} currency={settings.currency} activeProfileId={activeProfileId} />
+                                                            </div>
+                                                        </div>
+                                                    </Tab>
+                                                    <Tab eventKey="transactionDetails" title="Transaction Details">
+                                                        <ExpenseTable expenses={filteredTransactions} categories={settings.categories} onUpdateTransactionCategory={handleUpdateTransactionCategory} onAddRuleFromTransaction={handleAddRuleFromTransaction} currency={settings.currency} onDeleteTransaction={handleDeleteTransaction} />
+                                                    </Tab>
+                                                    <Tab eventKey="budget" title="Budget">
+                                                        <BudgetVisualization settings={settings} categories={settings.categories} selectedYear={selectedYearDashboard} currency={settings.currency} activeProfileId={activeProfileId} />
+                                                    </Tab>
+                                                </Tabs>
+                                            )}
+                                            {activeProfileType === "ASSET_MANAGER" && (
+                                                <AssetDashboard
+                                                    assets={assets}
+                                                    assetTypes={assetTypes}
+                                                    currency={settings.currency}
+                                                    activeProfileId={activeProfileId}
+                                                    selectedYear={selectedYearDashboard}
+                                                />
+                                            )}
                                         </div>
-                                        {activeProfileType === "EXPENSE_MANAGER" && (
-                                            <Tabs activeKey={dashboardSubTabKey} onSelect={(k) => setDashboardSubTabKey(k)} className="mb-3">
-                                                <Tab eventKey="overview" title="Overview">
-                                                    <div className="row">
-                                                        <div className="col-lg-4">
-                                                            <div className="card summary-card income-card mb-3">
-                                                                <div className="card-header">Total Income</div>
-                                                                <div className="card-body">
-                                                                    <h5 className="card-title">{formatCurrency(totalIncome, settings.currency)}</h5>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="col-lg-4">
-                                                            <div className="card summary-card expenses-card mb-3">
-                                                                <div className="card-header">Total Expenses</div>
-                                                                <div className="card-body">
-                                                                    <h5 className="card-title">{formatCurrency(totalExpenses, settings.currency)}</h5>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="col-lg-4">
-                                                            <div className="card summary-card net-income-card mb-3">
-                                                                <div className="card-header">Net Income</div>
-                                                                <div className="card-body">
-                                                                    <h5 className="card-title">{formatCurrency(netIncome, settings.currency)}</h5>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="row">
-                                                        <div className="col-lg-6">
-                                                            <div className="card mb-4 shadow-lg">
-                                                                <div className="card-header">
-                                                                    Expenses by Payment Source
-                                                                </div>
-                                                                <div className="card-body">
-                                                                    <PaymentSourcePieChart expenses={expenses} currency={settings.currency} />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="col-lg-6">
-                                                            <div className="card mb-4 shadow-lg">
-                                                                <div className="card-header">
-                                                                    Payment Source Specific Monthly Overview
-                                                                </div>
-                                                                <div className="card-body">
-                                                                    <div className="row mb-3">
-                                                                        <div className="col-md-4">
-                                                                            <select
-                                                                                className="form-control"
-                                                                                value={selectedPaymentSourceForChart}
-                                                                                onChange={e => setSelectedPaymentSourceForChart(e.target.value)}
-                                                                            >
-                                                                                <option value="">All Payment Sources</option>
-                                                                                {paymentSources.map(source => (
-                                                                                    <option key={source} value={source}>{source}</option>
-                                                                                ))}
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-                                                                    <PaymentSourceMonthlyBarChart
-                                                                        income={income}
-                                                                        expenses={expenses}
-                                                                        selectedPaymentSource={selectedPaymentSourceForChart}
-                                                                        currency={settings.currency}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="row">
-                                                        <div className="col-lg-12">
-                                                            <div className="card mb-4 shadow-lg">
-                                                                <div className="card-header">
-                                                                    Monthly Overview
-                                                                </div>
-                                                                <div className="card-body">
-                                                                    <div className="row mb-3">
-                                                                        <div className="col-md-6">
-                                                                            <select
-                                                                                className="form-control"
-                                                                                value={selectedPaymentSourceForMonthlyTable}
-                                                                                onChange={e => setSelectedPaymentSourceForMonthlyTable(e.target.value)}
-                                                                            >
-                                                                                <option value="">All Payment Sources</option>
-                                                                                {paymentSources.map(source => (
-                                                                                    <option key={source} value={source}>{source}</option>
-                                                                                ))}
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-                                                                    <MonthlySummaryTable
-                                                                        income={income}
-                                                                        expenses={expenses}
-                                                                        selectedPaymentSource={selectedPaymentSourceForMonthlyTable}
-                                                                        currency={settings.currency}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="row">
-                                                        <div className="col-lg-12">
-                                                            <div className="card mb-4 shadow-lg" style={{ position: 'relative', zIndex: 0 }}>
-                                                                <CategoryCostChart data={categoryCostData} budgets={settings.budgets} selectedYear={selectedYearDashboard} currency={settings.currency} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="row mt-4">
-                                                        <div className="col-lg-12">
-                                                            <div className="card mb-4 shadow-lg" style={{ position: 'relative', zIndex: 1 }}>
-                                                                <MonthlyStackedBarChart data={monthlyCategoryExpenses} excludedCategories={excludedCategories} budgets={settings.budgets} currency={settings.currency} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </Tab>
-                                                <Tab eventKey="subcategoryTrends" title="Subcategory Trends">
-                                                    <div className="row mt-4">
-                                                        <div className="col-lg-12">
-                                                            <CategorySubcategoryMonthlyCharts data={monthlyCategoryExpenses} excludedCategories={excludedCategories} budgets={settings.budgets} selectedYear={selectedYearDashboard} currency={settings.currency} activeProfileId={activeProfileId} />
-                                                        </div>
-                                                    </div>
-                                                </Tab>
-                                                <Tab eventKey="transactionDetails" title="Transaction Details">
-                                                    <ExpenseTable expenses={filteredTransactions} categories={settings.categories} onUpdateTransactionCategory={handleUpdateTransactionCategory} onAddRuleFromTransaction={handleAddRuleFromTransaction} currency={settings.currency} onDeleteTransaction={handleDeleteTransaction} />
-                                                </Tab>
-                                                <Tab eventKey="budget" title="Budget">
-                                                    <BudgetVisualization settings={settings} categories={settings.categories} selectedYear={selectedYearDashboard} currency={settings.currency} activeProfileId={activeProfileId} />
-                                                </Tab>
-                                            </Tabs>
-                                        )}
-                                        {activeProfileType === "ASSET_MANAGER" && (
-                                            <AssetDashboard
-                                                assets={assets}
-                                                assetTypes={assetTypes}
-                                                currency={settings.currency}
-                                                activeProfileId={activeProfileId}
-                                                selectedYear={selectedYearDashboard}
-                                            />
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="mt-3">
-                                        <Alert variant="info">Please select a profile from the Home page to view its dashboard.</Alert>
-                                    </div>
-                                )}
-                            </Tab>
+                                    ) : (
+                                        <div className="mt-3">
+                                            <Alert variant="info">Please select a profile from the Home page to view its dashboard.</Alert>
+                                        </div>
+                                    )}
+                                </Tab>
+                            )
+                        ) : (
+                            <Tab eventKey="profileDashboard" title={<span>Profile Dashboard <LockFill/></span>} disabled />
                         )}
-                        {activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
-                            <Tab eventKey="manualEntry" title="Record Transaction">
-                                <ManualTransactionEntry
-                                    profileId={activeProfileId}
-                                    categories={settings.categories}
-                                    paymentSources={paymentSources}
-                                    onTransactionAdded={fetchData}
-                                />
-                            </Tab>
+
+                        {currentUser?.is_premium ? (
+                            activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
+                                <Tab eventKey="manualEntry" title="Record Transaction">
+                                    <ManualTransactionEntry
+                                        profileId={activeProfileId}
+                                        categories={settings.categories}
+                                        paymentSources={paymentSources}
+                                        onTransactionAdded={fetchData}
+                                    />
+                                </Tab>
+                            )
+                        ) : (
+                            activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
+                                <Tab eventKey="manualEntry" title={<span>Record Transaction <LockFill/></span>} disabled />
+                            )
                         )}
-                        {activeProfileId && profileTypeLoaded && activeProfileType === "ASSET_MANAGER" && (
-                            <Tab eventKey="recordAsset" title="Record Asset">
-                                <RecordAsset
-                                    profileId={activeProfileId}
-                                    assetTypes={assetTypes}
-                                    onAssetAdded={fetchData}
-                                />
-                            </Tab>
+
+                        {currentUser?.is_premium ? (
+                            activeProfileId && profileTypeLoaded && activeProfileType === "ASSET_MANAGER" && (
+                                <Tab eventKey="recordAsset" title="Record Asset">
+                                    <RecordAsset
+                                        profileId={activeProfileId}
+                                        assetTypes={assetTypes}
+                                        onAssetAdded={fetchData}
+                                    />
+                                </Tab>
+                            )
+                        ) : (
+                            activeProfileId && profileTypeLoaded && activeProfileType === "ASSET_MANAGER" && (
+                                <Tab eventKey="recordAsset" title={<span>Record Asset <LockFill/></span>} disabled />
+                            )
                         )}
-                        {activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
-                            <Tab eventKey="rules" title="Rules" disabled={!currentUser?.is_premium}>
-                                {currentUser?.is_premium ? (
+
+                        {currentUser?.is_premium ? (
+                             activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
+                                <Tab eventKey="rules" title="Rules">
                                     <RulesTab settings={settings} onSave={handleSaveSettings} categories={settings.categories} paymentSources={paymentSources} />
-                                ) : (
-                                    <Alert variant="warning" className="mt-3">
-                                        This feature is available for Premium users only. Please upgrade your plan to use the automated rules engine.
-                                    </Alert>
-                                )}
-                            </Tab>
+                                </Tab>
+                            )
+                        ) : (
+                            activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
+                                <Tab eventKey="rules" title={<span>Rules <LockFill/></span>} disabled />
+                            )
                         )}
-                        {activeProfileId && profileTypeLoaded && (
-                            <Tab eventKey="settings" title="Settings">
-                                {activeProfileType === "EXPENSE_MANAGER" ? (
-                                    <Settings settings={settings} onSave={handleSaveSettings} profileId={activeProfileId} />
-                                ) : (
-                                    <AssetTypeManager profileId={activeProfileId} />
-                                )}
-                            </Tab>
+
+                        {currentUser?.is_premium ? (
+                            activeProfileId && profileTypeLoaded && (
+                                <Tab eventKey="settings" title="Settings">
+                                    {activeProfileType === "EXPENSE_MANAGER" ? (
+                                        <Settings settings={settings} onSave={handleSaveSettings} profileId={activeProfileId} />
+                                    ) : (
+                                        <AssetTypeManager profileId={activeProfileId} />
+                                    )}
+                                </Tab>
+                            )
+                        ) : (
+                             activeProfileId && profileTypeLoaded && (
+                                <Tab eventKey="settings" title={<span>Settings <LockFill/></span>} disabled />
+                            )
                         )}
                     </Tabs>
                     <SubscriptionModal
