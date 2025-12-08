@@ -383,6 +383,9 @@ class TransactionCreate(BaseModel):
     subcategory: Optional[str] = None
     profile_id: int
 
+class TransactionCreateList(BaseModel):
+    transactions: List[TransactionCreate]
+
 
 @app.post("/api/payment_sources", response_model=PaymentSourceResponse)
 def create_payment_source(
@@ -445,6 +448,24 @@ def create_transaction(
     session.commit()
     session.refresh(db_transaction)
     return db_transaction
+
+
+@app.post("/api/transactions/bulk", response_model=List[Transaction])
+def create_transactions_bulk(
+    transaction_list: TransactionCreateList, session: Session = Depends(get_session)
+):
+    created_transactions = []
+    for transaction_data in transaction_list.transactions:
+        db_transaction = Transaction.model_validate(transaction_data)
+        session.add(db_transaction)
+        created_transactions.append(db_transaction)
+    
+    session.commit()
+    
+    for db_transaction in created_transactions:
+        session.refresh(db_transaction)
+        
+    return created_transactions
 
 
 @app.delete("/api/transactions/{transaction_id}")
