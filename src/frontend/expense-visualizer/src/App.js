@@ -23,6 +23,8 @@ import SideBar from './components/SideBar';
 import AssetDashboard from './components/AssetDashboard';
 import RecordAsset from "./RecordAsset";
 import AssetTypeManager from "./components/AssetTypeManager";
+import MembershipBanner from './components/MembershipBanner';
+import SubscriptionModal from './components/SubscriptionModal';
 
 // Setup axios interceptor
 axios.interceptors.request.use(config => {
@@ -76,9 +78,24 @@ function MainApp() {
     const [profiles, setProfiles] = useState([]);
     const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('activeProfileId'));
     const [profileTypeLoaded, setProfileTypeLoaded] = useState(false); // New state for profile type loaded status
+    const [currentUser, setCurrentUser] = useState(null);
+    const [showSubscribeModal, setShowSubscribeModal] = useState(false);
     const navigate = useNavigate();
 
     const API_BASE_URL = 'http://localhost:8000';
+
+    const fetchUser = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/users/me`);
+            setCurrentUser(response.data);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchUser();
+    }, []);
 
     const handleLogout = () => {
         authService.logout();
@@ -318,6 +335,18 @@ function MainApp() {
     }
   };
 
+  const handleSubscribe = async (period) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/users/me/subscribe`, { period });
+        setCurrentUser(response.data);
+        setShowSubscribeModal(false);
+        alert('Subscription successful! You are now a Premium user.');
+    } catch (error) {
+        console.error('Error subscribing:', error);
+        alert('Subscription failed. Please try again.');
+    }
+  };
+
     const activeProfileType = profiles.find(p => p.id === activeProfileId)?.profile_type;
     const filteredIncomeForTotal = income.filter(inc => !excludedCategories.includes(inc.category));
     const totalIncome = filteredIncomeForTotal.reduce((acc, item) => acc + item.amount, 0);
@@ -369,6 +398,9 @@ function MainApp() {
                         <h1 className="my-4">Expense Manager</h1>
                         <Button variant="outline-danger" onClick={handleLogout}>Logout</Button>
                     </div>
+                    {currentUser && !currentUser.is_premium && (
+                        <MembershipBanner onUpgradeClick={() => setShowSubscribeModal(true)} />
+                    )}
                     <Tabs activeKey={key} onSelect={(k) => setKey(k)} className="mb-3">
                         <Tab eventKey="home" title="Home">
                             <HomePage onProfileSelect={handleProfileSelect} />
@@ -571,8 +603,14 @@ function MainApp() {
                             </Tab>
                         )}
                         {activeProfileId && profileTypeLoaded && activeProfileType === "EXPENSE_MANAGER" && (
-                            <Tab eventKey="rules" title="Rules">
-                                <RulesTab settings={settings} onSave={handleSaveSettings} categories={settings.categories} paymentSources={paymentSources} />
+                            <Tab eventKey="rules" title="Rules" disabled={!currentUser?.is_premium}>
+                                {currentUser?.is_premium ? (
+                                    <RulesTab settings={settings} onSave={handleSaveSettings} categories={settings.categories} paymentSources={paymentSources} />
+                                ) : (
+                                    <Alert variant="warning" className="mt-3">
+                                        This feature is available for Premium users only. Please upgrade your plan to use the automated rules engine.
+                                    </Alert>
+                                )}
                             </Tab>
                         )}
                         {activeProfileId && profileTypeLoaded && (
@@ -585,6 +623,11 @@ function MainApp() {
                             </Tab>
                         )}
                     </Tabs>
+                    <SubscriptionModal
+                        show={showSubscribeModal}
+                        onHide={() => setShowSubscribeModal(false)}
+                        onSubscribe={handleSubscribe}
+                    />
                 </Col>
             </Row>
         </div>

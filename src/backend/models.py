@@ -1,6 +1,7 @@
 from typing import List, Optional
 from enum import Enum
 import uuid # Import uuid
+from datetime import datetime
 
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy import UniqueConstraint # Import UniqueConstraint
@@ -25,8 +26,38 @@ class User(SQLModel, table=True):
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None
     mobile_phone_number: Optional[str] = None
+    subscription_expiry_date: Optional[datetime] = Field(default=None)
 
     profiles: List["Profile"] = Relationship(back_populates="user")
+    subscription_history: List["SubscriptionHistory"] = Relationship(back_populates="user")
+    payment_transactions: List["PaymentTransaction"] = Relationship(back_populates="user")
+
+
+class SubscriptionHistory(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    subscription_type: str
+    purchase_date: datetime
+    start_date: datetime
+    end_date: datetime
+
+    user: "User" = Relationship(back_populates="subscription_history")
+    payment_transaction: Optional["PaymentTransaction"] = Relationship(back_populates="subscription")
+
+
+class PaymentTransaction(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    subscription_id: Optional[int] = Field(foreign_key="subscriptionhistory.id")
+    amount: float
+    currency: str
+    status: str
+    payment_gateway: str = "simulated"
+    gateway_transaction_id: Optional[str] = Field(default=None, index=True)
+    transaction_date: datetime
+
+    user: "User" = Relationship(back_populates="payment_transactions")
+    subscription: Optional["SubscriptionHistory"] = Relationship(back_populates="payment_transaction")
 
 
 class Profile(SQLModel, table=True):

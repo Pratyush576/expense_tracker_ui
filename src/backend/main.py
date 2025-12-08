@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine, get_session
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction
 from backend.processing.rule_engine import RuleEngine
 from backend import auth
 from fastapi.security import OAuth2PasswordRequestForm
@@ -73,6 +73,11 @@ def on_startup():
                 session.commit()
                 print("Added 'user_last_name' column to 'user' table.")
 
+            if "subscription_expiry_date" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN subscription_expiry_date DATETIME"))
+                session.commit()
+                print("Added 'subscription_expiry_date' column to 'user' table.")
+
         columns = inspector.get_columns("profile")
         column_names = [col['name'] for col in columns]
         if "public_id" not in column_names:
@@ -113,11 +118,19 @@ class UserUpdate(BaseModel):
     user_last_name: Optional[str] = None
     mobile_phone_number: Optional[str] = None
 
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    user_first_name: Optional[str] = None
+    user_last_name: Optional[str] = None
+    mobile_phone_number: Optional[str] = None
+    subscription_expiry_date: Optional[datetime] = None
+    is_premium: bool
+
 class PasswordReset(BaseModel):
     old_password: str
     new_password: str
     confirm_new_password: str
-
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -132,16 +145,35 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
         raise HTTPException(status_code=400, detail="Password must be 72 characters or fewer.")
     
     hashed_password = auth.get_password_hash(user.password)
+    
+    # New logic for subscription
+    now = datetime.now()
+    trial_expiry_date = now + timedelta(days=30)
+
     db_user = User(
         email=user.email,
         hashed_password=hashed_password,
         user_first_name=user.user_first_name,
         user_last_name=user.user_last_name,
         mobile_phone_number=user.mobile_phone_number,
+        subscription_expiry_date=trial_expiry_date
     )
     session.add(db_user)
     session.commit()
+    session.refresh(db_user) # Get the user ID
+
+    # Create subscription history record
+    trial_history = SubscriptionHistory(
+        user_id=db_user.id,
+        subscription_type="trial",
+        purchase_date=now,
+        start_date=now,
+        end_date=trial_expiry_date
+    )
+    session.add(trial_history)
+    session.commit()
     session.refresh(db_user)
+
     return db_user
 
 
@@ -150,7 +182,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), ses
     user = auth.get_user(session, email=form_data.username)
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=400,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
@@ -161,12 +193,24 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), ses
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/api/users/me", response_model=User)
+@app.get("/api/users/me", response_model=UserResponse)
 def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
-    return current_user
+    is_premium = False
+    if current_user.subscription_expiry_date:
+        is_premium = current_user.subscription_expiry_date > datetime.now()
+    
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        user_first_name=current_user.user_first_name,
+        user_last_name=current_user.user_last_name,
+        mobile_phone_number=current_user.mobile_phone_number,
+        subscription_expiry_date=current_user.subscription_expiry_date,
+        is_premium=is_premium
+    )
 
 
-@app.put("/api/users/me", response_model=User)
+@app.put("/api/users/me", response_model=UserResponse)
 def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
     if user_update.user_first_name is not None:
         current_user.user_first_name = user_update.user_first_name
@@ -178,7 +222,20 @@ def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.g
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    return current_user
+    
+    is_premium = False
+    if current_user.subscription_expiry_date:
+        is_premium = current_user.subscription_expiry_date > datetime.now()
+
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        user_first_name=current_user.user_first_name,
+        user_last_name=current_user.user_last_name,
+        mobile_phone_number=current_user.mobile_phone_number,
+        subscription_expiry_date=current_user.subscription_expiry_date,
+        is_premium=is_premium
+    )
 
 
 @app.put("/api/users/me/password")
@@ -195,6 +252,85 @@ def change_password_me(password_reset: PasswordReset, current_user: User = Depen
     session.commit()
     session.refresh(current_user)
     return {"message": "Password updated successfully"}
+
+
+class SubscriptionCreate(BaseModel):
+    period: str # "monthly" or "yearly"
+
+@app.post("/api/users/me/subscribe", response_model=UserResponse)
+def subscribe(subscription: SubscriptionCreate, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
+    now = datetime.now()
+    
+    # Determine the duration of the subscription
+    if subscription.period == "monthly":
+        duration = timedelta(days=30)
+        amount = 10.0 # Example price
+    elif subscription.period == "yearly":
+        duration = timedelta(days=365)
+        amount = 100.0 # Example price
+    else:
+        raise HTTPException(status_code=400, detail="Invalid subscription period")
+
+    # Create a pending payment transaction
+    payment = PaymentTransaction(
+        user_id=current_user.id,
+        amount=amount,
+        currency="USD", # Example currency
+        status="pending",
+        transaction_date=now,
+        gateway_transaction_id=str(uuid.uuid4()) # Simulated gateway ID
+    )
+    session.add(payment)
+    session.commit()
+    session.refresh(payment)
+
+    # Simulate payment success
+    payment.status = "succeeded"
+    session.add(payment)
+    session.commit()
+
+    # Calculate new expiry date
+    start_date = now
+    if current_user.subscription_expiry_date and current_user.subscription_expiry_date > now:
+        start_date = current_user.subscription_expiry_date
+    
+    end_date = start_date + duration
+    current_user.subscription_expiry_date = end_date
+    session.add(current_user)
+    session.commit()
+
+    # Create subscription history record
+    history = SubscriptionHistory(
+        user_id=current_user.id,
+        subscription_type=subscription.period,
+        purchase_date=now,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    session.add(history)
+    session.commit()
+    session.refresh(history)
+
+    # Link payment to history
+    payment.subscription_id = history.id
+    session.add(payment)
+    session.commit()
+
+    # Return updated user status
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        user_first_name=current_user.user_first_name,
+        user_last_name=current_user.user_last_name,
+        mobile_phone_number=current_user.mobile_phone_number,
+        subscription_expiry_date=current_user.subscription_expiry_date,
+        is_premium=True
+    )
+
+@app.get("/api/users/me/subscription_history", response_model=List[SubscriptionHistory])
+def get_subscription_history(session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
+    history = session.exec(select(SubscriptionHistory).where(SubscriptionHistory.user_id == current_user.id)).all()
+    return history
 
 
 # Define Pydantic models for API requests
