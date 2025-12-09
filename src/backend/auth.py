@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from sqlmodel import Session, select
 
 from backend.database import get_session
-from backend.models import User
+from backend.models import User, Role
 
 # Configuration
 SECRET_KEY = "your-secret-key"  # TODO: Move to environment variables
@@ -66,4 +66,22 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
     # In the future, you could add a check here for `is_active`
     # if not current_user.is_active:
     #     raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_active_user)):
+    if current_user.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user does not have enough privileges. Admin required.",
+        )
+    return current_user
+
+
+def get_current_manager_user(current_user: User = Depends(get_current_active_user)):
+    if current_user.role not in [Role.ADMIN, Role.MANAGER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user does not have enough privileges. Manager or Admin required.",
+        )
     return current_user

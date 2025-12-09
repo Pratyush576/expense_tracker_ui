@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine, get_session
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget
 from backend.processing.rule_engine import RuleEngine
 from backend import auth
 from fastapi.security import OAuth2PasswordRequestForm
@@ -77,6 +77,11 @@ def on_startup():
                 session.execute(text("ALTER TABLE user ADD COLUMN subscription_expiry_date DATETIME"))
                 session.commit()
                 print("Added 'subscription_expiry_date' column to 'user' table.")
+
+            if "role" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN role VARCHAR(50) DEFAULT 'USER'"))
+                session.commit()
+                print("Added 'role' column to 'user' table.")
 
         columns = inspector.get_columns("profile")
         column_names = [col['name'] for col in columns]
@@ -126,6 +131,7 @@ class UserResponse(BaseModel):
     mobile_phone_number: Optional[str] = None
     subscription_expiry_date: Optional[datetime] = None
     is_premium: bool
+    role: Role
 
 class PasswordReset(BaseModel):
     old_password: str
@@ -206,7 +212,8 @@ def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
         user_last_name=current_user.user_last_name,
         mobile_phone_number=current_user.mobile_phone_number,
         subscription_expiry_date=current_user.subscription_expiry_date,
-        is_premium=is_premium
+        is_premium=is_premium,
+        role=current_user.role
     )
 
 
@@ -1552,3 +1559,287 @@ async def get_budget_vs_expenses(
     logging.info("Finished processing budgets.")
 
     return results_df.reset_index().to_dict(orient="records")
+
+
+# --- Admin Endpoints ---
+
+class RoleUpdate(BaseModel):
+    role: Role
+
+@app.post("/api/admin/users/{user_id}/assign-role", response_model=UserResponse)
+def assign_role(
+    user_id: int,
+    role_update: RoleUpdate,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    target_user = session.get(User, user_id)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target_user.role = role_update.role
+    session.add(target_user)
+    session.commit()
+    session.refresh(target_user)
+
+    is_premium = False
+    if target_user.subscription_expiry_date:
+        is_premium = target_user.subscription_expiry_date > datetime.now()
+
+    return UserResponse(
+        id=target_user.id,
+        email=target_user.email,
+        user_first_name=target_user.user_first_name,
+        user_last_name=target_user.user_last_name,
+        mobile_phone_number=target_user.mobile_phone_number,
+        subscription_expiry_date=target_user.subscription_expiry_date,
+        is_premium=is_premium,
+        role=target_user.role
+    )
+
+@app.get("/api/admin/users", response_model=List[UserResponse])
+def get_all_users(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    users = session.exec(select(User)).all()
+    return [
+        UserResponse(
+            id=user.id,
+            email=user.email,
+            user_first_name=user.user_first_name,
+            user_last_name=user.user_last_name,
+            mobile_phone_number=user.mobile_phone_number,
+            subscription_expiry_date=user.subscription_expiry_date,
+            is_premium=user.subscription_expiry_date > datetime.now() if user.subscription_expiry_date else False,
+            role=user.role
+        ) for user in users
+    ]
+
+# --- Pricing Endpoints ---
+
+class GeographicPriceCreate(BaseModel):
+    country_code: str
+    subscription_type: str
+    price: float
+    currency: str
+
+class GeographicPriceUpdate(BaseModel):
+    price: Optional[float] = None
+    currency: Optional[str] = None
+
+@app.post("/api/admin/pricing", response_model=GeographicPrice)
+def create_geographic_price(
+    price_data: GeographicPriceCreate,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    price = GeographicPrice.model_validate(price_data)
+    session.add(price)
+    session.commit()
+    session.refresh(price)
+    return price
+
+@app.get("/api/admin/pricing", response_model=List[GeographicPrice])
+def get_geographic_prices(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    prices = session.exec(select(GeographicPrice)).all()
+    return prices
+
+@app.put("/api/admin/pricing/{price_id}", response_model=GeographicPrice)
+def update_geographic_price(
+    price_id: int,
+    price_update: GeographicPriceUpdate,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    price = session.get(GeographicPrice, price_id)
+    if not price:
+        raise HTTPException(status_code=404, detail="Price not found")
+    
+    update_data = price_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(price, key, value)
+    
+    session.add(price)
+    session.commit()
+    session.refresh(price)
+    return price
+
+# --- Discount Endpoints ---
+
+class DiscountCreate(BaseModel):
+    name: str
+    discount_percentage: float
+    start_date: datetime
+    end_date: datetime
+    is_active: bool = True
+
+class DiscountUpdate(BaseModel):
+    name: Optional[str] = None
+    discount_percentage: Optional[float] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    is_active: Optional[bool] = None
+
+@app.post("/api/admin/discounts", response_model=Discount)
+def create_discount(
+    discount_data: DiscountCreate,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    discount = Discount.model_validate(discount_data)
+    session.add(discount)
+    session.commit()
+    session.refresh(discount)
+    return discount
+
+@app.get("/api/admin/discounts", response_model=List[Discount])
+def get_discounts(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    discounts = session.exec(select(Discount)).all()
+    return discounts
+
+@app.put("/api/admin/discounts/{discount_id}", response_model=Discount)
+def update_discount(
+    discount_id: int,
+    discount_update: DiscountUpdate,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    discount = session.get(Discount, discount_id)
+    if not discount:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    update_data = discount_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(discount, key, value)
+        
+    session.add(discount)
+    session.commit()
+    session.refresh(discount)
+    return discount
+
+# --- Proposal Endpoints ---
+
+class ProposalCreate(BaseModel):
+    proposal_type: str
+    payload: Dict[str, Any]
+    targets: List[Dict[str, str]]
+
+@app.post("/api/manager/proposals", response_model=Proposal)
+def create_proposal(
+    proposal_data: ProposalCreate,
+    session: Session = Depends(get_session),
+    manager_user: User = Depends(auth.get_current_manager_user),
+):
+    proposal = Proposal(
+        proposer_id=manager_user.id,
+        proposal_type=proposal_data.proposal_type,
+        payload=proposal_data.payload,
+    )
+    session.add(proposal)
+    session.commit()
+    session.refresh(proposal)
+
+    for target_data in proposal_data.targets:
+        target = ProposalTarget(
+            proposal_id=proposal.id,
+            target_type=target_data["target_type"],
+            target_value=target_data["target_value"],
+        )
+        session.add(target)
+    
+    session.commit()
+    session.refresh(proposal)
+    return proposal
+
+@app.get("/api/manager/proposals", response_model=List[Proposal])
+def get_manager_proposals(
+    session: Session = Depends(get_session),
+    manager_user: User = Depends(auth.get_current_manager_user),
+):
+    proposals = session.exec(select(Proposal).where(Proposal.proposer_id == manager_user.id)).all()
+    return proposals
+
+@app.get("/api/admin/proposals", response_model=List[Proposal])
+def get_all_proposals(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    proposals = session.exec(select(Proposal)).all()
+    return proposals
+
+@app.get("/api/manager/users/{user_id}", response_model=UserResponse)
+def get_user_by_id_for_manager(
+    user_id: int,
+    session: Session = Depends(get_session),
+    manager_user: User = Depends(auth.get_current_manager_user),
+):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    is_premium = False
+    if user.subscription_expiry_date:
+        is_premium = user.subscription_expiry_date > datetime.now()
+
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        user_first_name=user.user_first_name,
+        user_last_name=user.user_last_name,
+        mobile_phone_number=user.mobile_phone_number,
+        subscription_expiry_date=user.subscription_expiry_date,
+        is_premium=is_premium,
+        role=user.role
+    )
+
+@app.post("/api/admin/proposals/{proposal_id}/approve", response_model=Proposal)
+def approve_proposal(
+    proposal_id: int,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    proposal = session.get(Proposal, proposal_id)
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    proposal.status = "approved"
+    proposal.reviewed_by_id = admin_user.id
+    proposal.reviewed_at = datetime.now()
+    
+    # TODO: Implement logic to apply the proposal payload
+    
+    session.add(proposal)
+    session.commit()
+    session.refresh(proposal)
+    return proposal
+
+class RejectionReason(BaseModel):
+    reason: str
+
+@app.post("/api/admin/proposals/{proposal_id}/reject", response_model=Proposal)
+def reject_proposal(
+    proposal_id: int,
+    rejection: RejectionReason,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    proposal = session.get(Proposal, proposal_id)
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+        
+    proposal.status = "rejected"
+    proposal.reviewed_by_id = admin_user.id
+    proposal.reviewed_at = datetime.now()
+    proposal.rejection_reason = rejection.reason
+    
+    session.add(proposal)
+    session.commit()
+    session.refresh(proposal)
+    return proposal

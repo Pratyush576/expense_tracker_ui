@@ -1,11 +1,16 @@
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from enum import Enum
 import uuid # Import uuid
 from datetime import datetime
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, JSON, Column
 from sqlalchemy import UniqueConstraint # Import UniqueConstraint
 
+
+class Role(str, Enum):
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    USER = "USER"
 
 class PaymentType(str, Enum):
     CREDIT_CARD = "Credit Card"
@@ -27,10 +32,19 @@ class User(SQLModel, table=True):
     user_last_name: Optional[str] = None
     mobile_phone_number: Optional[str] = None
     subscription_expiry_date: Optional[datetime] = Field(default=None)
+    role: Role = Field(default=Role.USER)
 
     profiles: List["Profile"] = Relationship(back_populates="user")
     subscription_history: List["SubscriptionHistory"] = Relationship(back_populates="user")
     payment_transactions: List["PaymentTransaction"] = Relationship(back_populates="user")
+    proposals: List["Proposal"] = Relationship(
+        back_populates="proposer",
+        sa_relationship_kwargs={"foreign_keys": "[Proposal.proposer_id]"}
+    )
+    reviews: List["Proposal"] = Relationship(
+        back_populates="reviewer",
+        sa_relationship_kwargs={"foreign_keys": "[Proposal.reviewed_by_id]"}
+    )
 
 
 class SubscriptionHistory(SQLModel, table=True):
@@ -58,6 +72,54 @@ class PaymentTransaction(SQLModel, table=True):
 
     user: "User" = Relationship(back_populates="payment_transactions")
     subscription: Optional["SubscriptionHistory"] = Relationship(back_populates="payment_transaction")
+
+
+class GeographicPrice(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    country_code: str = Field(index=True)
+    subscription_type: str  # "monthly" or "yearly"
+    price: float
+    currency: str
+
+
+class Discount(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    discount_percentage: float
+    start_date: datetime
+    end_date: datetime
+    is_active: bool = Field(default=True)
+
+
+class Proposal(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    proposer_id: int = Field(foreign_key="user.id")
+    reviewed_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    status: str = Field(default="pending")  # pending, approved, rejected
+    proposal_type: str  # price, discount
+    payload: Dict[str, Any] = Field(sa_column=Column(JSON))
+    rejection_reason: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    reviewed_at: Optional[datetime] = None
+
+    proposer: "User" = Relationship(
+        back_populates="proposals",
+        sa_relationship_kwargs={"foreign_keys": "[Proposal.proposer_id]"}
+    )
+    reviewer: Optional["User"] = Relationship(
+        back_populates="reviews",
+        sa_relationship_kwargs={"foreign_keys": "[Proposal.reviewed_by_id]"}
+    )
+    targets: List["ProposalTarget"] = Relationship(back_populates="proposal")
+
+
+class ProposalTarget(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    proposal_id: int = Field(foreign_key="proposal.id")
+    target_type: str  # all_users, specific_user, country
+    target_value: str
+
+    proposal: "Proposal" = Relationship(back_populates="targets")
 
 
 class Profile(SQLModel, table=True):
