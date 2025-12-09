@@ -19,19 +19,35 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
 
     const visibleProfiles = profiles.filter(profile => !profile.is_hidden);
 
+    const groupedProfiles = visibleProfiles.reduce((acc, profile) => {
+        const type = profile.profile_type || 'UNCATEGORIZED'; // Handle cases where profile_type might be missing
+        if (!acc[type]) {
+            acc[type] = [];
+        }
+        acc[type].push(profile);
+        return acc;
+    }, {});
+
     return (
         <div className="sidebar-container">
             <ListGroup>
-                {visibleProfiles.map(profile => (
-                    <div
-                        key={profile.id}
-                        onClick={() => handleProfileClick(profile.id)}
-                        className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center sidebar-profile-item ${profile.id === activeProfileId ? 'active' : ''} profile-type-${profile.profile_type.toLowerCase().replace('_', '-')}`}
-                    >
-                        <div className="d-flex align-items-center">
-                            <span style={{ fontSize: '1.2rem', marginRight: '5px' }}>{getFlagEmoji(profile.currency)}</span> {/* Display flag emoji */}
-                            <span className="profile-name-on-hover">{profile.name}</span>
-                        </div>
+                {Object.entries(groupedProfiles).map(([type, profilesInGroup]) => (
+                    <div key={type}>
+                        <ListGroup.Item className="sidebar-group-heading text-uppercase fw-bold" active={false}>
+                            {type.replace('_', ' ')}
+                        </ListGroup.Item>
+                        {profilesInGroup.map(profile => (
+                            <div
+                                key={profile.id}
+                                onClick={() => handleProfileClick(profile.id)}
+                                className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center sidebar-profile-item ${profile.id === activeProfileId ? 'active' : ''} profile-type-${profile.profile_type.toLowerCase().replace('_', '-')}`}
+                            >
+                                <div className="d-flex align-items-center">
+                                    <span style={{ fontSize: '1.2rem', marginRight: '5px' }}>{getFlagEmoji(profile.currency)}</span> {/* Display flag emoji */}
+                                    <span className="profile-name-on-hover">{profile.name}</span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ))}
             </ListGroup>

@@ -292,6 +292,23 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 1;
 }
 
+/* Sidebar Group Heading Styling */
+.sidebar-group-heading {
+    background-color: var(--background-dark); /* A slightly darker background */
+    color: var(--text-dark);
+    font-size: 0.9rem; /* Slightly larger font size */
+    padding: 0.6rem 0.8rem; /* More padding */
+    border-bottom: 1px solid var(--border-color); /* Separator */
+    margin-top: 10px; /* Space above the heading */
+    border-radius: 0; /* Remove border-radius for a cleaner look */
+    cursor: default; /* Not clickable */
+}
+
+.sidebar-group-heading:hover {
+    background-color: var(--background-dark); /* No change on hover */
+    transform: none; /* No transform on hover */
+}
+
 
 /* Table Styling */
 .expense-table {
