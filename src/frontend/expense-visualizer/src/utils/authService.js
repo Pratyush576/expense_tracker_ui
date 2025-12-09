@@ -31,10 +31,16 @@ const login = (email, password) => {
 
 const logout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
 };
 
 const getCurrentUser = () => {
-    return JSON.parse(localStorage.getItem('user'));
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+};
+
+const getToken = () => {
+    return localStorage.getItem('token');
 };
 
 const updateUser = (firstName, lastName, mobileNumber) => {

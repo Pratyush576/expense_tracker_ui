@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Link, BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import authService from './utils/authService';
 import Login from './components/Login';
@@ -26,6 +26,7 @@ import RecordAsset from "./RecordAsset";
 import AssetTypeManager from "./components/AssetTypeManager";
 import MembershipBanner from './components/MembershipBanner';
 import SubscriptionModal from './components/SubscriptionModal';
+import AdminPanel from './components/AdminPanel';
 
 // Setup axios interceptor
 axios.interceptors.request.use(config => {
@@ -52,7 +53,7 @@ const PrivateRoute = ({ children }) => {
     return user ? children : <Navigate to="/login" />;
 };
 
-function MainApp() {
+function MainApp({ currentUser, onSubscribe }) {
     const [income, setIncome] = useState([]);
     const [expenses, setExpenses] = useState([]);
     const [monthlyAggregatedExpenses, setMonthlyAggregatedExpenses] = useState([]);
@@ -79,24 +80,10 @@ function MainApp() {
     const [profiles, setProfiles] = useState([]);
     const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('activeProfileId'));
     const [profileTypeLoaded, setProfileTypeLoaded] = useState(false); // New state for profile type loaded status
-    const [currentUser, setCurrentUser] = useState(null);
     const [showSubscribeModal, setShowSubscribeModal] = useState(false);
     const navigate = useNavigate();
 
     const API_BASE_URL = 'http://localhost:8000';
-
-    const fetchUser = async () => {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/api/users/me`);
-            setCurrentUser(response.data);
-        } catch (error) {
-            console.error('Error fetching user data:', error);
-        }
-    };
-
-    useEffect(() => {
-        fetchUser();
-    }, []);
 
     const handleLogout = () => {
         authService.logout();
@@ -175,8 +162,6 @@ function MainApp() {
               .then(response => {
                 if (Array.isArray(response.data)) {
                   setCategoryCostData(response.data);
-                } else {
-                  setCategoryCostData([]);
                 }
               })
               .catch(error => {
@@ -336,16 +321,10 @@ function MainApp() {
     }
   };
 
-  const handleSubscribe = async (period) => {
-    try {
-        const response = await axios.post(`${API_BASE_URL}/api/users/me/subscribe`, { period });
-        setCurrentUser(response.data);
+  const handleSubscribe = (period) => {
+    onSubscribe(period).then(() => {
         setShowSubscribeModal(false);
-        alert('Subscription successful! You are now a Premium user.');
-    } catch (error) {
-        console.error('Error subscribing:', error);
-        alert('Subscription failed. Please try again.');
-    }
+    });
   };
 
     const activeProfileType = profiles.find(p => p.id === activeProfileId)?.profile_type;
@@ -397,7 +376,12 @@ function MainApp() {
                 <Col md={11}>
                     <div className="d-flex justify-content-between align-items-center">
                         <h1 className="my-4">Expense Manager</h1>
-                        <Button variant="outline-danger" onClick={handleLogout}>Logout</Button>
+                        <div>
+                            {currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') && (
+                                <Link to="/admin" className="btn btn-secondary me-2">Admin Panel</Link>
+                            )}
+                            <Button variant="outline-danger" onClick={handleLogout}>Logout</Button>
+                        </div>
                     </div>
                     {currentUser && !currentUser.is_premium && (
                         <MembershipBanner onUpgradeClick={() => setShowSubscribeModal(true)} />
@@ -595,7 +579,6 @@ function MainApp() {
                                 <Tab eventKey="manualEntry" title="Record Transaction">
                                     <ManualTransactionEntry
                                         profileId={activeProfileId}
-                                        categories={settings.categories}
                                         paymentSources={paymentSources}
                                         onTransactionAdded={fetchData}
                                     />
@@ -654,7 +637,7 @@ function MainApp() {
                     <SubscriptionModal
                         show={showSubscribeModal}
                         onHide={() => setShowSubscribeModal(false)}
-                        onSubscribe={handleSubscribe}
+                        onSubscribe={onSubscribe}
                     />
                 </Col>
             </Row>
@@ -664,12 +647,42 @@ function MainApp() {
 
 
 function App() {
+    const [currentUser, setCurrentUser] = useState(null);
+    const API_BASE_URL = 'http://localhost:8000';
+
+    const fetchUser = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/users/me`);
+            setCurrentUser(response.data);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (authService.getCurrentUser()) {
+            fetchUser();
+        }
+    }, []);
+
+    const handleSubscribe = async (period) => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/api/users/me/subscribe`, { period });
+            setCurrentUser(response.data);
+            alert('Subscription successful! You are now a Premium user.');
+        } catch (error) {
+            console.error('Error subscribing:', error);
+            alert('Subscription failed. Please try again.');
+        }
+    };
+
     return (
         <Router>
             <Routes>
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<Login onLogin={fetchUser} />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/*" element={<PrivateRoute><MainApp /></PrivateRoute>} />
+                <Route path="/admin/*" element={<PrivateRoute><AdminPanel currentUser={currentUser} /></PrivateRoute>} />
+                <Route path="/*" element={<PrivateRoute><MainApp currentUser={currentUser} onSubscribe={handleSubscribe} /></PrivateRoute>} />
             </Routes>
         </Router>
     );

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert } from 'react-bootstrap';
 import authService from '../utils/authService';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -20,9 +20,15 @@ const Login = () => {
 
         try {
             await authService.login(email, password);
+            onLogin(); // Call onLogin prop to update user state in App.js
             navigate('/');
         } catch (err) {
-            setError('Failed to login. Please check your credentials.');
+            console.error('Login error details:', err);
+            if (err.response && err.response.data && err.response.data.detail) {
+                setError(err.response.data.detail);
+            } else {
+                setError('Failed to login. Please check your credentials.');
+            }
         }
     };
 
