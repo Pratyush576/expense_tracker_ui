@@ -91,11 +91,13 @@ function MainApp({ currentUser, onSubscribe }) {
     };
 
     const fetchData = async () => {
+        console.log('fetchData called. activeProfileId:', activeProfileId);
         if (activeProfileId) {
             localStorage.setItem('activeProfileId', activeProfileId);
             try {
                 const profileResponse = await axios.get(`${API_BASE_URL}/api/profiles/${activeProfileId}`);
                 const activeProfileType = profileResponse.data.profile_type;
+                console.log('Profile type fetched:', activeProfileType);
 
                 if (activeProfileType === "EXPENSE_MANAGER") {
                     const response = await axios.get(`${API_BASE_URL}/api/expenses?profile_id=${activeProfileId}`, { params: { excluded_categories: excludedCategories } });
@@ -116,23 +118,42 @@ function MainApp({ currentUser, onSubscribe }) {
                     setAssets(assetsResponse.data);
                     setSettings(prevSettings => ({ ...prevSettings, currency: profileResponse.data.currency }));
                 }
-                setProfileTypeLoaded(true);
+                setProfileTypeLoaded(true); // Set to true after data is fetched
+                console.log('profileTypeLoaded set to true (data fetched).');
             } catch (error) {
                 console.error('Error fetching data: ', error);
-                setProfileTypeLoaded(true);
+                setProfileTypeLoaded(true); // Set to true even on error to avoid infinite loading
+                console.log('profileTypeLoaded set to true (error during fetch).');
             }
         } else {
-            setProfileTypeLoaded(true);
+            setProfileTypeLoaded(true); // Set to true if no activeProfileId
+            console.log('profileTypeLoaded set to true (no activeProfileId).');
         }
     };
 
     useEffect(() => {
         axios.get('http://localhost:8000/api/profiles')
             .then(response => {
-                setProfiles(response.data);
-                if (!activeProfileId && response.data.length > 0) {
-                    setActiveProfileId(response.data[0].id);
+                const fetchedProfiles = response.data;
+                setProfiles(fetchedProfiles);
+
+                const storedActiveProfileId = localStorage.getItem('activeProfileId');
+                let newActiveProfileId = null;
+
+                if (storedActiveProfileId) {
+                    // Check if the stored activeProfileId belongs to the current user's profiles
+                    const foundProfile = fetchedProfiles.find(p => p.id === parseInt(storedActiveProfileId));
+                    if (foundProfile) {
+                        newActiveProfileId = foundProfile.id;
+                    }
                 }
+
+                // If no valid activeProfileId is found, default to the first available profile
+                if (!newActiveProfileId && fetchedProfiles.length > 0) {
+                    newActiveProfileId = fetchedProfiles[0].id;
+                }
+                
+                setActiveProfileId(newActiveProfileId);
             })
             .catch(error => {
                 console.error('Error fetching profiles: ', error);
@@ -328,6 +349,7 @@ function MainApp({ currentUser, onSubscribe }) {
   };
 
     const activeProfileType = profiles.find(p => p.id === activeProfileId)?.profile_type;
+    console.log('Derived activeProfileType for rendering:', activeProfileType, 'Profiles:', profiles, 'Active Profile ID:', activeProfileId);
     const filteredIncomeForTotal = income.filter(inc => !excludedCategories.includes(inc.category));
     const totalIncome = filteredIncomeForTotal.reduce((acc, item) => acc + item.amount, 0);
     const filteredExpensesForTotal = expenses.filter(exp => !excludedCategories.includes(exp.category));
@@ -392,7 +414,7 @@ function MainApp({ currentUser, onSubscribe }) {
                         </Tab>
 
                         {currentUser?.is_premium ? (
-                            activeProfileId && profileTypeLoaded && (
+                            activeProfileId && activeProfileType === "EXPENSE_MANAGER" && profileTypeLoaded && (
                                 <Tab eventKey="profileDashboard" title="Profile Dashboard">
                                     {activeProfileId ? (
                                         <div>
