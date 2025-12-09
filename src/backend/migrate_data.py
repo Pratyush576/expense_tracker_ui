@@ -6,13 +6,14 @@ from backend.models import User, Profile, Transaction, Category, Rule, Budget
 import os
 from pathlib import Path
 from backend.processing.rule_engine import RuleEngine # Import RuleEngine
+import logging # Import logging
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SETTINGS_FILE = PROJECT_ROOT / "data" / "user_settings" / "user_settings.json"
 CONSOLIDATED_EXPENSES_CSV = PROJECT_ROOT / "data" / "expense" / "consolidated_expenses.csv"
 
 def migrate_data():
-    print("Starting data migration...")
+    logging.info("Starting data migration...")
     from backend.database import create_db_and_tables
     create_db_and_tables() # Create tables if they don't exist
 
@@ -24,7 +25,7 @@ def migrate_data():
             session.add(default_user)
             session.commit()
             session.refresh(default_user)
-            print("Default user created.")
+            logging.info("Default user created.")
 
         # 2. Create a default profile
         default_profile = session.exec(select(Profile).where(Profile.name == "Default Profile")).first()
@@ -33,7 +34,7 @@ def migrate_data():
             session.add(default_profile)
             session.commit()
             session.refresh(default_profile)
-            print("Default profile created.")
+            logging.info("Default profile created.")
 
         # Load settings for RuleEngine
         settings_data = {}
@@ -48,7 +49,7 @@ def migrate_data():
                 }
         
         rule_engine = RuleEngine(settings_data=settings_data)
-        print(f"Settings data loaded for RuleEngine: {settings_data}")
+        logging.info(f"Settings data loaded for RuleEngine: {settings_data}")
 
         # 3. Migrate settings from user_settings.json
         if os.path.exists(SETTINGS_FILE):
@@ -87,7 +88,7 @@ def migrate_data():
                     session.add(db_budget)
             
             session.commit()
-            print("Settings migrated.")
+            logging.info("Settings migrated.")
 
         # 4. Migrate transactions from consolidated_expenses.csv
         if os.path.exists(CONSOLIDATED_EXPENSES_CSV):
@@ -108,9 +109,9 @@ def migrate_data():
                 session.add(db_transaction)
             
             session.commit()
-            print("Transactions migrated.")
+            logging.info("Transactions migrated.")
 
-    print("Data migration finished.")
+    logging.info("Data migration finished.")
 
 if __name__ == "__main__":
     from sqlmodel import select

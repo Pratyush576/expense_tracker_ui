@@ -24,7 +24,7 @@ logging.basicConfig(
 # Get the project root directory (which is 2 levels up from the current file)
 # main.py -> backend -> expense_tracker_ui -> personal_tracker
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-print(PROJECT_ROOT)
+logging.info(f"Project root: {PROJECT_ROOT}")
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
@@ -66,29 +66,29 @@ def on_startup():
             if "user_first_name" not in user_column_names:
                 session.execute(text("ALTER TABLE user ADD COLUMN user_first_name VARCHAR(50) DEFAULT 'Default'"))
                 session.commit()
-                print("Added 'user_first_name' column to 'user' table.")
+                logging.info("Added 'user_first_name' column to 'user' table.")
             
             if "user_last_name" not in user_column_names:
                 session.execute(text("ALTER TABLE user ADD COLUMN user_last_name VARCHAR(50) DEFAULT 'Default'"))
                 session.commit()
-                print("Added 'user_last_name' column to 'user' table.")
+                logging.info("Added 'user_last_name' column to 'user' table.")
 
             if "subscription_expiry_date" not in user_column_names:
                 session.execute(text("ALTER TABLE user ADD COLUMN subscription_expiry_date DATETIME"))
                 session.commit()
-                print("Added 'subscription_expiry_date' column to 'user' table.")
+                logging.info("Added 'subscription_expiry_date' column to 'user' table.")
 
             if "role" not in user_column_names:
                 session.execute(text("ALTER TABLE user ADD COLUMN role VARCHAR(50) DEFAULT 'USER'"))
                 session.commit()
-                print("Added 'role' column to 'user' table.")
+                logging.info("Added 'role' column to 'user' table.")
 
         columns = inspector.get_columns("profile")
         column_names = [col['name'] for col in columns]
         if "public_id" not in column_names:
             session.execute(text("ALTER TABLE profile ADD COLUMN public_id VARCHAR(10)"))
             session.commit()
-            print("Added 'public_id' column to 'profile' table.")
+            logging.info("Added 'public_id' column to 'profile' table.")
             
             # Generate public_id for existing profiles
             profiles_without_public_id = session.exec(select(Profile).where(Profile.public_id == None)).all()
@@ -97,17 +97,17 @@ def on_startup():
                 profile.public_id = str(uuid.uuid4().hex[:10]) # Generate a 10-char hex string
                 session.add(profile)
             session.commit()
-            print(f"Generated public_id for {len(profiles_without_public_id)} existing profiles.")
+            logging.info(f"Generated public_id for {len(profiles_without_public_id)} existing profiles.")
         
         if "is_hidden" not in column_names:
             session.execute(text("ALTER TABLE profile ADD COLUMN is_hidden BOOLEAN DEFAULT FALSE"))
             session.commit()
-            print("Added 'is_hidden' column to 'profile' table with default FALSE.")
+            logging.info("Added 'is_hidden' column to 'profile' table with default FALSE.")
         
         if "profile_type" not in column_names:
             session.execute(text("ALTER TABLE profile ADD COLUMN profile_type VARCHAR(20) DEFAULT 'EXPENSE_MANAGER'"))
             session.commit()
-            print("Added 'profile_type' column to 'profile' table with default 'EXPENSE_MANAGER'.")
+            logging.info("Added 'profile_type' column to 'profile' table with default 'EXPENSE_MANAGER'.")
 
 
 # Pydantic models for user authentication
@@ -1027,7 +1027,7 @@ def get_expenses(
         ],
         "currency": profile.currency,
     }
-    logging.info(f"Constructed settings: {settings}")
+    logging.debug(f"Constructed settings: {settings}")
 
     # Initialize RuleEngine with the profile's settings
     rule_engine = RuleEngine(settings_data=settings)
@@ -1042,15 +1042,15 @@ def get_expenses(
 
     # Categorize transactions
     for t in transactions:
-        logging.info(f"Transaction in process: [{t}]")
+        logging.debug(f"Transaction in process: [{t}]")
         transaction_dict = t.dict()
-        logging.info(f"Categorizing transaction_dict: {transaction_dict}")
+        logging.debug(f"Categorizing transaction_dict: {transaction_dict}")
         category, subcategory = rule_engine.categorize_transaction(transaction_dict)
-        logging.info(f"Categorized as: {category}:{subcategory}")
+        logging.debug(f"Categorized as: {category}:{subcategory}")
         t.category = category
         t.subcategory = subcategory
         session.add(t)  # Add the modified transaction back to the session
-        logging.info(
+        logging.debug(
             f"Transaction {t.id} updated with category {t.category}:{t.subcategory}"
         )
 
@@ -1070,7 +1070,7 @@ def get_expenses(
     expenses = [t for t in transactions if t.amount < 0]
     net_income = sum(t.amount for t in transactions)
 
-    logging.info(
+    logging.debug(
         f"Returning income: {len(income)} items, expenses: {len(expenses)} items, net_income: {net_income}, settings: {settings}"
     )
 
@@ -1154,7 +1154,7 @@ async def get_monthly_category_expenses(
         monthly_category_expenses[key] = monthly_category_expenses.get(key, 0) + abs(
             t.amount
         )
-    logging.info(f"Aggregated monthly_category_expenses: {monthly_category_expenses}")
+    logging.debug(f"Aggregated monthly_category_expenses: {monthly_category_expenses}")
 
     result = [
         {"YearMonth": k[0], "Category": k[1], "Subcategory": k[2], "total_cost": v}
@@ -1534,7 +1534,7 @@ async def get_budget_vs_expenses(
         target_month = (
             parsed_date.month if time_granularity == BudgetTimeWindow.MONTHLY else None
         )
-        logging.info(f"Processing budget for period {period_label}: year={target_year}, month={target_month}.")
+        logging.debug(f"Processing budget for period {period_label}: year={target_year}, month={target_month}.")
 
         for (
             target_category
@@ -1542,7 +1542,7 @@ async def get_budget_vs_expenses(
             period_budget_amount = get_budget_for_period(
                 target_category, target_year, target_month, budgets
             )
-            logging.info(f"Budget for {target_category} in {period_label}: {period_budget_amount}")
+            logging.debug(f"Budget for {target_category} in {period_label}: {period_budget_amount}")
 
             if (period_label, target_category) in results_df.index:
                 results_df.loc[(period_label, target_category), "budgeted_amount"] = (

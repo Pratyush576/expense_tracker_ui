@@ -2,6 +2,12 @@
 
 This file contains guidance and context for the Gemini agent.
 
+## Table of Contents
+
+- [Core Directives](#core-directives)
+- [Project Summary](#project-summary)
+  - [Recent Updates](#recent-updates)
+
 ## Core Directives
 *   **Understanding the current project:** During the startup review the package/project thoroughly and build a detailed understanding. Check if README.md file exists in the root directory and create or update the document depending on whether it's existing or not
 *   **Preserve Content:** Never wipe the content of a document unless explicitly asked to do so.

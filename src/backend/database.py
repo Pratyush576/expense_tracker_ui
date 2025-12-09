@@ -6,7 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATABASE_FILE = PROJECT_ROOT / "database.db"
 DATABASE_URL = f"sqlite:///{DATABASE_FILE}"
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=False)
 
 
 def get_session():
