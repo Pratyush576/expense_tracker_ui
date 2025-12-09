@@ -1648,7 +1648,7 @@ def get_geographic_prices(
     prices = session.exec(select(GeographicPrice)).all()
     return prices
 
-@app.put("/api/admin/pricing/{price_id}", response_model=GeographicPrice)
+@app.get("/api/admin/pricing/{price_id}", response_model=GeographicPrice)
 def update_geographic_price(
     price_id: int,
     price_update: GeographicPriceUpdate,
@@ -1667,6 +1667,14 @@ def update_geographic_price(
     session.commit()
     session.refresh(price)
     return price
+
+@app.get("/api/pricing", response_model=List[GeographicPrice])
+def get_public_geographic_prices(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(auth.get_current_active_user), # Accessible to any authenticated user
+):
+    prices = session.exec(select(GeographicPrice)).all()
+    return prices
 
 # --- Discount Endpoints ---
 
@@ -1723,6 +1731,14 @@ def update_discount(
     session.commit()
     session.refresh(discount)
     return discount
+
+@app.get("/api/discounts", response_model=List[Discount])
+def get_public_discounts(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(auth.get_current_active_user), # Accessible to any authenticated user
+):
+    discounts = session.exec(select(Discount)).all()
+    return discounts
 
 # --- Proposal Endpoints ---
 

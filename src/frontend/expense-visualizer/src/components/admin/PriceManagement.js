@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Form, Button, Alert, Row, Col, InputGroup } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
 import axios from 'axios';
+import { countryCodes } from '../../utils/country';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -64,7 +65,14 @@ const PriceManagement = () => {
                             <Col md={3}>
                                 <Form.Group>
                                     <Form.Label>Country Code</Form.Label>
-                                    <Form.Control type="text" name="country_code" value={newPrice.country_code} onChange={handleNewPriceChange} placeholder="e.g., US, IN" required />
+                                    <Form.Select name="country_code" value={newPrice.country_code} onChange={handleNewPriceChange} required>
+                                        <option value="">Select Country</option>
+                                        {countryCodes.map(country => (
+                                            <option key={country.code} value={country.code}>
+                                                {country.name} ({country.code})
+                                            </option>
+                                        ))}
+                                    </Form.Select>
                                 </Form.Group>
                             </Col>
                             <Col md={3}>
