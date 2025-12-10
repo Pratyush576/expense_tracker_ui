@@ -17,8 +17,8 @@ import Settings from './Settings';
 import RulesTab from './RulesTab';
 import ManualTransactionEntry from './ManualTransactionEntry';
 import HomePage from './HomePage';
-import { Tab, Tabs, Row, Col, Alert, Button } from 'react-bootstrap';
-import { LockFill } from 'react-bootstrap-icons';
+import { Tab, Tabs, Row, Col, Alert, Button, Card } from 'react-bootstrap';
+import { LockFill, PlusCircle } from 'react-bootstrap-icons';
 import { formatCurrency } from './utils/currency';
 import SideBar from './components/SideBar';
 import AssetDashboard from './components/AssetDashboard';
@@ -81,6 +81,7 @@ function MainApp({ currentUser, onSubscribe }) {
     const [activeProfileId, setActiveProfileId] = useState(localStorage.getItem('activeProfileId'));
     const [profileTypeLoaded, setProfileTypeLoaded] = useState(false); // New state for profile type loaded status
     const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+    const [showCreateProfileModalFromHome, setShowCreateProfileModalFromHome] = useState(false); // New state for modal from HomePage
     const navigate = useNavigate();
 
     const API_BASE_URL = 'http://localhost:8000';
@@ -393,7 +394,7 @@ function MainApp({ currentUser, onSubscribe }) {
         <div className="container-fluid">
             <Row>
                 <Col md={1} className="sidebar-col">
-                    <SideBar profiles={profiles} activeProfileId={activeProfileId} setActiveProfileId={setActiveProfileId} handleCreateProfile={handleCreateProfile} handleUpdateProfile={handleUpdateProfile} handleDeleteProfile={handleDeleteProfile} onProfileVisibilityChange={handleProfileVisibilityChange} />
+                    <SideBar profiles={profiles} activeProfileId={activeProfileId} setActiveProfileId={setActiveProfileId} handleCreateProfile={handleCreateProfile} handleUpdateProfile={handleUpdateProfile} handleDeleteProfile={handleDeleteProfile} onProfileVisibilityChange={handleProfileVisibilityChange} showCreateProfileModalFromHome={showCreateProfileModalFromHome} setShowCreateProfileModalFromHome={setShowCreateProfileModalFromHome} />
                 </Col>
                 <Col md={11}>
                     <div className="d-flex justify-content-between align-items-center">
@@ -410,7 +411,7 @@ function MainApp({ currentUser, onSubscribe }) {
                     )}
                     <Tabs activeKey={key} onSelect={(k) => setKey(k)} className="mb-3">
                         <Tab eventKey="home" title="Home">
-                            <HomePage onProfileSelect={handleProfileSelect} />
+                            <HomePage onProfileSelect={handleProfileSelect} setShowCreateProfileModalFromHome={setShowCreateProfileModalFromHome} />
                         </Tab>
 
                         {currentUser?.is_premium ? (
@@ -586,9 +587,17 @@ function MainApp({ currentUser, onSubscribe }) {
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="mt-3">
-                                            <Alert variant="info">Please select a profile from the Home page to view its dashboard.</Alert>
-                                        </div>
+                                        <Card className="shadow-lg p-4 text-center mt-3">
+                                            <Card.Body>
+                                                <h2 className="text-primary mb-3">No Profile Selected</h2>
+                                                <p className="lead mb-4">
+                                                    Please select an existing profile from the sidebar or create a new one to view its dashboard.
+                                                </p>
+                                                <Button variant="primary" onClick={() => setShowCreateProfileModalFromHome(true)}>
+                                                    <PlusCircle className="me-2" />Create New Profile
+                                                </Button>
+                                            </Card.Body>
+                                        </Card>
                                     )}
                                 </Tab>
                             )

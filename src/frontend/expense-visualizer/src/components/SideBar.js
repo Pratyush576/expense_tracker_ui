@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListGroup, Button, Dropdown } from 'react-bootstrap'; // Import Tooltip, OverlayTrigger, and Dropdown
 import { PlusCircle, PersonGear, Briefcase, GraphUp, Gear, Pencil, Key } from 'react-bootstrap-icons'; // Import icons
 import CreateProfileModal from './CreateProfileModal';
@@ -7,11 +7,20 @@ import UserProfileEditModal from './UserProfileEditModal'; // New: Import UserPr
 import ChangePasswordModal from './ChangePasswordModal'; // New: Import ChangePasswordModal
 import { getFlagEmoji } from '../utils/currency'; // Import getFlagEmoji
 
-const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreateProfile, handleUpdateProfile, handleDeleteProfile, onProfileVisibilityChange }) => {
-    const [showCreateProfileModal, setShowCreateProfileModal] = useState(false);
+const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreateProfile, handleUpdateProfile, handleDeleteProfile, onProfileVisibilityChange, showCreateProfileModalFromHome, setShowCreateProfileModalFromHome }) => {
+    const [showCreateProfileModal, setShowCreateProfileModal] = useState(showCreateProfileModalFromHome);
     const [showManageProfilesModal, setShowManageProfilesModal] = useState(false); // New state for manage profiles modal
     const [showUserProfileEditModal, setShowUserProfileEditModal] = useState(false); // New state
     const [showChangePasswordModal, setShowChangePasswordModal] = useState(false); // New state
+
+    useEffect(() => {
+        setShowCreateProfileModal(showCreateProfileModalFromHome);
+    }, [showCreateProfileModalFromHome]);
+
+    const handleCloseCreateProfileModal = () => {
+        setShowCreateProfileModal(false);
+        setShowCreateProfileModalFromHome(false); // Also reset the state in App.js
+    };
 
     const handleProfileClick = (profileId) => {
         setActiveProfileId(profileId);
@@ -82,7 +91,7 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
 
             <CreateProfileModal
                 show={showCreateProfileModal}
-                handleClose={() => setShowCreateProfileModal(false)}
+                handleClose={handleCloseCreateProfileModal}
                 handleCreateProfile={handleCreateProfile}
             />
 

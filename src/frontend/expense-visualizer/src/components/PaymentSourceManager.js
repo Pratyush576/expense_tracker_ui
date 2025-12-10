@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Card, ListGroup, Alert } from 'react-bootstrap';
+import { Form, Button, Card, ListGroup, Alert, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
+import { CreditCardFill, PlusCircle, Trash } from 'react-bootstrap-icons'; // Import icons
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -84,55 +85,69 @@ function PaymentSourceManager({ profileId }) {
 
     return (
         <Card className="mb-4">
-            <Card.Header>Manage Payment Sources</Card.Header>
+            <Card.Header className="bg-primary text-white d-flex align-items-center">
+                <CreditCardFill className="me-2" />
+                <h5 className="mb-0">Manage Payment Sources</h5>
+            </Card.Header>
             <Card.Body>
                 {error && <Alert variant="danger">{error}</Alert>}
                 {success && <Alert variant="success">{success}</Alert>}
 
                 <Form onSubmit={handleSubmit} className="mb-4">
-                    <Form.Group className="mb-3">
-                        <Form.Label>Payment Type</Form.Label>
-                        <Form.Control
-                            as="select"
-                            name="payment_type"
-                            value={newPaymentSource.payment_type}
-                            onChange={handleChange}
-                        >
-                            {Object.values(PaymentType).map(type => (
-                                <option key={type} value={type}>{type}</option>
-                            ))}
-                        </Form.Control>
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Payment Source Name</Form.Label>
-                        <Form.Control
-                            type="text"
-                            name="source_name"
-                            value={newPaymentSource.source_name}
-                            onChange={handleChange}
-                            placeholder="e.g., Visa ending in 1234, My Bank Account"
-                            required
-                        />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Note (Optional)</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            name="note"
-                            value={newPaymentSource.note}
-                            onChange={handleChange}
-                            rows={2}
-                            placeholder="Any additional notes about this payment source"
-                        />
-                    </Form.Group>
-                    <Button variant="primary" type="submit">
-                        Add Payment Source
+                    <Row className="g-3">
+                        <Col md={4}>
+                            <Form.Group className="form-floating" controlId="floatingPaymentType">
+                                <Form.Control
+                                    as="select"
+                                    name="payment_type"
+                                    value={newPaymentSource.payment_type}
+                                    onChange={handleChange}
+                                >
+                                    {Object.values(PaymentType).map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </Form.Control>
+                                <Form.Label>Payment Type</Form.Label>
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group className="form-floating" controlId="floatingSourceName">
+                                <Form.Control
+                                    type="text"
+                                    name="source_name"
+                                    value={newPaymentSource.source_name}
+                                    onChange={handleChange}
+                                    placeholder="e.g., Visa ending in 1234, My Bank Account"
+                                    required
+                                />
+                                <Form.Label>Payment Source Name</Form.Label>
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group className="form-floating" controlId="floatingNote">
+                                <Form.Control
+                                    as="textarea"
+                                    name="note"
+                                    value={newPaymentSource.note}
+                                    onChange={handleChange}
+                                    rows={1} // Adjusted rows for floating label
+                                    placeholder="Any additional notes"
+                                    style={{ minHeight: '58px' }} // Ensure enough height for floating label
+                                />
+                                <Form.Label>Note (Optional)</Form.Label>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                    <Button variant="primary" type="submit" className="mt-3">
+                        <PlusCircle className="me-2" />Add Payment Source
                     </Button>
                 </Form>
 
-                <h5>Existing Payment Sources</h5>
+                <h5 className="mt-4">Existing Payment Sources</h5>
                 {paymentSources.length === 0 ? (
-                    <p>No payment sources added yet.</p>
+                    <Alert variant="info" className="text-center">
+                        No payment sources added yet. Use the form above to add your first payment source.
+                    </Alert>
                 ) : (
                     <ListGroup>
                         {paymentSources.map(source => (
@@ -142,7 +157,7 @@ function PaymentSourceManager({ profileId }) {
                                     {source.note && <p className="text-muted mb-0">{source.note}</p>}
                                 </div>
                                 <Button variant="danger" size="sm" onClick={() => handleDelete(source.id)}>
-                                    Delete
+                                    <Trash />
                                 </Button>
                             </ListGroup.Item>
                         ))}

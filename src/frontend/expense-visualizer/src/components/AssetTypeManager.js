@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Button, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse } from 'react-bootstrap';
-import { ChevronDown, ChevronUp, PencilSquare, Trash } from 'react-bootstrap-icons';
+import { Form, Button, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse, Alert } from 'react-bootstrap';
+import { ChevronDown, ChevronUp, PencilSquare, Trash, WalletFill, PlusCircle, Plus, Pencil } from 'react-bootstrap-icons';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
@@ -125,51 +125,66 @@ const AssetTypeManager = ({ profileId }) => {
     return (
         <div>
             <Card className="mb-4">
-                <Card.Header className="bg-primary text-white">Manage Asset Types and Subtypes</Card.Header>
+                <Card.Header className="bg-primary text-white d-flex align-items-center">
+                    <WalletFill className="me-2" />
+                    <h5 className="mb-0">Manage Asset Types and Subtypes</h5>
+                </Card.Header>
                 <Card.Body>
-                    {assetTypes.map((assetType, index) => (
-                        <Card key={assetType.id} className="mb-3 border-info">
-                            <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center" onClick={() => toggleSubtypes(index)} style={{ cursor: 'pointer' }}>
-                                <strong>{assetType.name}</strong>
-                                <div>
-                                    {openSubtypes[index] ? <ChevronUp /> : <ChevronDown />}
-                                    <Button variant="light" size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); handleEditAssetTypeClick(assetType); }}><PencilSquare /></Button>{' '}
-                                    <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteAssetType(assetType.id, assetType.name); }}><Trash /></Button>
-                                </div>
-                            </Card.Header>
-                            <Collapse in={openSubtypes[index]}>
-                                <div id={`subtypes-${assetType.id}`}>
-                                    <Card.Body>
-                                        <ListGroup>
-                                            {assetType.subtypes.map((subtype, subIndex) => (
-                                                <ListGroup.Item key={subIndex} className="d-flex justify-content-between align-items-center">
-                                                    {subtype}
-                                                    <Button variant="danger" size="sm" onClick={() => handleDeleteSubtype(index, subtype)}>Delete</Button>
-                                                </ListGroup.Item>
-                                            ))}
-                                        </ListGroup>
-                                        <InputGroup className="mt-3">
-                                            <Form.Control
-                                                type="text"
-                                                value={newSubtypeInputs[index] || ''}
-                                                onChange={(e) => setNewSubtypeInputs(prev => ({ ...prev, [index]: e.target.value }))}
-                                                placeholder="New subtype name"
-                                            />
-                                            <Button variant="success" onClick={() => handleAddSubtype(index)}>Add Subtype</Button>
-                                        </InputGroup>
-                                    </Card.Body>
-                                </div>
-                            </Collapse>
-                        </Card>
-                    ))}
+                    {assetTypes.length > 0 ? (
+                        assetTypes.map((assetType, index) => (
+                            <Card key={assetType.id} className="mb-3 border-info">
+                                <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center" onClick={() => toggleSubtypes(index)} style={{ cursor: 'pointer' }}>
+                                    <strong>{assetType.name}</strong>
+                                    <div>
+                                        {openSubtypes[index] ? <ChevronUp /> : <ChevronDown />}
+                                        <Button variant="light" size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); handleEditAssetTypeClick(assetType); }}><Pencil /></Button>{' '}
+                                        <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteAssetType(assetType.id, assetType.name); }}><Trash /></Button>
+                                    </div>
+                                </Card.Header>
+                                <Collapse in={openSubtypes[index]}>
+                                    <div id={`subtypes-${assetType.id}`}>
+                                        <Card.Body>
+                                            <ListGroup>
+                                                {assetType.subtypes.map((subtype, subIndex) => (
+                                                    <ListGroup.Item key={subIndex} className="d-flex justify-content-between align-items-center">
+                                                        {subtype}
+                                                        <Button variant="danger" size="sm" onClick={() => handleDeleteSubtype(index, subtype)}><Trash /></Button>
+                                                    </ListGroup.Item>
+                                                ))}
+                                            </ListGroup>
+                                            <InputGroup className="mt-3">
+                                                <Form.Group className="form-floating w-100" controlId={`floatingNewSubtypeInput-${index}`}>
+                                                    <Form.Control
+                                                        type="text"
+                                                        value={newSubtypeInputs[index] || ''}
+                                                        onChange={(e) => setNewSubtypeInputs(prev => ({ ...prev, [index]: e.target.value }))}
+                                                        placeholder="New subtype name"
+                                                    />
+                                                    <Form.Label>New Subtype Name</Form.Label>
+                                                </Form.Group>
+                                                <Button variant="success" onClick={() => handleAddSubtype(index)} className="ms-2"><Plus /></Button>
+                                            </InputGroup>
+                                        </Card.Body>
+                                    </div>
+                                </Collapse>
+                            </Card>
+                        ))
+                    ) : (
+                        <Alert variant="info" className="text-center">
+                            No asset types defined yet. Use the form below to add your first asset type.
+                        </Alert>
+                    )}
                     <InputGroup className="mt-3">
-                        <Form.Control
-                            type="text"
-                            value={newAssetTypeName}
-                            onChange={(e) => setNewAssetTypeName(e.target.value)}
-                            placeholder="New asset type name"
-                        />
-                        <Button variant="success" onClick={handleAddAssetType}>Add Asset Type</Button>
+                        <Form.Group className="form-floating w-100" controlId="floatingNewAssetTypeName">
+                            <Form.Control
+                                type="text"
+                                value={newAssetTypeName}
+                                onChange={(e) => setNewAssetTypeName(e.target.value)}
+                                placeholder="New asset type name"
+                            />
+                            <Form.Label>New Asset Type Name</Form.Label>
+                        </Form.Group>
+                        <Button variant="success" onClick={handleAddAssetType} className="ms-2"><PlusCircle /></Button>
                     </InputGroup>
                 </Card.Body>
             </Card>
@@ -180,21 +195,24 @@ const AssetTypeManager = ({ profileId }) => {
                     <Modal.Title>Edit Asset Type</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form.Group>
-                        <Form.Label>Asset Type Name</Form.Label>
+                    <Form.Group className="form-floating mb-3" controlId="floatingEditAssetTypeName">
                         <Form.Control
                             type="text"
                             value={currentAssetTypeEdit.name}
                             onChange={(e) => setCurrentAssetTypeEdit({ ...currentAssetTypeEdit, name: e.target.value })}
+                            placeholder="Asset Type Name"
                         />
+                        <Form.Label>Asset Type Name</Form.Label>
                     </Form.Group>
-                    <Form.Group className="mt-3">
-                        <Form.Label>Subtypes (comma-separated)</Form.Label>
+                    <Form.Group className="form-floating mt-3" controlId="floatingEditSubtypes">
                         <Form.Control
-                            type="text"
+                            as="textarea"
                             value={currentAssetTypeEdit.subtypes}
                             onChange={(e) => setCurrentAssetTypeEdit({ ...currentAssetTypeEdit, subtypes: e.target.value })}
+                            placeholder="Subtypes (comma-separated)"
+                            rows={3}
                         />
+                        <Form.Label>Subtypes (comma-separated)</Form.Label>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

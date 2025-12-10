@@ -1,13 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Button, Card, Row, Col, Table, Alert } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback, forwardRef } from 'react';
+import { Form, Button, Card, Row, Col, Table, Alert, InputGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format, parse } from 'date-fns';
-import { ChevronDown, ChevronUp, PlusCircle, DashCircle, Files } from 'react-bootstrap-icons';
+import { ChevronDown, ChevronUp, PlusCircle, DashCircle, Files, Wallet2, Save, Pencil, Trash } from 'react-bootstrap-icons';
 import { v4 as uuidv4 } from 'uuid';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+
+// Custom Input for DatePicker to support floating labels
+const CustomDatePickerInput = forwardRef(({ value, onClick, placeholder }, ref) => (
+    <Form.Control
+        type="text"
+        onClick={onClick}
+        value={value}
+        ref={ref}
+        placeholder={placeholder}
+        readOnly
+    />
+));
 
 const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
     const [assetRecords, setAssetRecords] = useState([
@@ -163,136 +175,167 @@ const RecordAsset = ({ profileId, assetTypes, onAssetAdded }) => {
 
     return (
         <Card className="mb-4">
-            <Card.Header className="bg-primary text-white">Record Asset Value</Card.Header>
+            <Card.Header className="bg-primary text-white d-flex align-items-center">
+                <Wallet2 className="me-2" />
+                <h5 className="mb-0">Record Asset Value</h5>
+            </Card.Header>
             <Card.Body>
                 {error && <Alert variant="danger">{error}</Alert>}
                 {success && <Alert variant="success">{success}</Alert>}
+
+                {assetTypes.length === 0 && (
+                    <Alert variant="warning" className="text-center mb-4">
+                        No asset types found for this profile. Please add asset types in the "Settings" tab before recording assets.
+                    </Alert>
+                )}
+
                 <Form>
                     {assetRecords.map((record, index) => (
-                        <Row key={record.id} className="mb-3 p-3 border rounded">
+                        <Row key={record.id} className="mb-3 p-3 border rounded g-3">
                             <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Date</Form.Label>
+                                <Form.Group className="form-floating" controlId={`floatingDate-${record.id}`}>
                                     <DatePicker
                                         selected={record.date}
                                         onChange={(date) => handleDateChange(record.id, date)}
                                         dateFormat="MM/yyyy"
                                         showMonthYearPicker
                                         className="form-control"
+                                        customInput={<CustomDatePickerInput placeholder="Date" />}
                                     />
+                                    <Form.Label>Date</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Asset Type</Form.Label>
-                                    <Form.Control as="select" name="asset_type_id" value={record.asset_type_id} onChange={(e) => handleInputChange(record.id, e)}>
+                                <Form.Group className="form-floating" controlId={`floatingAssetType-${record.id}`}>
+                                    <Form.Control as="select" name="asset_type_id" value={record.asset_type_id} onChange={(e) => handleInputChange(record.id, e)} disabled={assetTypes.length === 0}>
                                         <option value="">Select Type</option>
                                         {assetTypes.map(at => (
                                             <option key={at.id} value={at.id}>{at.name}</option>
                                         ))}
                                     </Form.Control>
+                                    <Form.Label>Asset Type</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Subtype</Form.Label>
+                                <Form.Group className="form-floating" controlId={`floatingSubtype-${record.id}`}>
                                     <Form.Control as="select" name="asset_subtype_name" value={record.asset_subtype_name} onChange={(e) => handleInputChange(record.id, e)} disabled={!record.asset_type_id || getAvailableSubtypes(record.asset_type_id).length === 0}>
                                         <option value="">Select Subtype</option>
                                         {getAvailableSubtypes(record.asset_type_id).map(st => (
                                             <option key={st} value={st}>{st}</option>
                                         ))}
                                     </Form.Control>
+                                    <Form.Label>Subtype</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Value</Form.Label>
+                                <Form.Group className="form-floating" controlId={`floatingValue-${record.id}`}>
                                     <Form.Control type="number" name="value" placeholder="Value" value={record.value} onChange={(e) => handleInputChange(record.id, e)} />
+                                    <Form.Label>Value</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Note</Form.Label>
+                                <Form.Group className="form-floating" controlId={`floatingNote-${record.id}`}>
                                     <Form.Control type="text" name="note" placeholder="Note" value={record.note} onChange={(e) => handleInputChange(record.id, e)} />
+                                    <Form.Label>Note</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2} className="d-flex align-items-end">
-                                <Button variant="info" size="sm" onClick={() => copyRecord(record.id)} className="me-2"><Files /></Button>
-                                {assetRecords.length > 1 && <Button variant="danger" size="sm" onClick={() => removeRecord(record.id)}><DashCircle /></Button>}
+                                <OverlayTrigger
+                                    placement="top"
+                                    overlay={<Tooltip id={`copy-asset-tooltip-${record.id}`}>Copy this asset record</Tooltip>}
+                                >
+                                    <Button variant="info" size="sm" onClick={() => copyRecord(record.id)} className="me-2"><Files /></Button>
+                                </OverlayTrigger>
+                                {assetRecords.length > 1 && (
+                                    <OverlayTrigger
+                                        placement="top"
+                                        overlay={<Tooltip id={`remove-asset-tooltip-${record.id}`}>Remove this asset record</Tooltip>}
+                                    >
+                                        <Button variant="danger" size="sm" onClick={() => removeRecord(record.id)}><DashCircle /></Button>
+                                    </OverlayTrigger>
+                                )}
                             </Col>
                         </Row>
                     ))}
-                    <Row>
+                    <Row className="mt-3">
                         <Col>
-                            <Button variant="secondary" onClick={addRecord}><PlusCircle /> Add Another Record</Button>
+                            <Button variant="secondary" onClick={addRecord}><PlusCircle className="me-2" /> Add Another Record</Button>
                         </Col>
                     </Row>
                     <hr />
                     <Row>
                         <Col>
-                            <Button variant="primary" onClick={handleRecordAssets} className="w-100">Record Assets</Button>
+                            <Button variant="primary" onClick={handleRecordAssets} className="w-100">
+                                <Save className="me-2" />Record Assets
+                            </Button>
                         </Col>
                     </Row>
                 </Form>
             </Card.Body>
             <Card.Footer>
-                <h5>Existing Asset Records</h5>
-                <Table striped bordered hover responsive>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Asset Type</th>
-                            <th>Subtype</th>
-                            <th>Value</th>
-                            <th>Note</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {Object.entries(
-                            existingAssets.reduce((acc, asset) => {
-                                const assetType = asset.asset_type_name;
-                                const assetSubtype = asset.asset_subtype_name || 'N/A';
-                                if (!acc[assetType]) acc[assetType] = {};
-                                if (!acc[assetType][assetSubtype]) acc[assetType][assetSubtype] = [];
-                                acc[assetType][assetSubtype].push(asset);
-                                return acc;
-                            }, {})
-                        ).map(([assetType, subtypesMap]) => (
-                            <React.Fragment key={assetType}>
-                                <tr className="table-primary">
-                                    <td colSpan="6" onClick={() => toggleGroup(assetType)} style={{ cursor: 'pointer' }}>
-                                        <strong>Asset Type: {assetType}</strong>
-                                        {collapsedGroups[assetType] ? <ChevronDown className="ms-2" /> : <ChevronUp className="ms-2" />}
-                                    </td>
-                                </tr>
-                                {!collapsedGroups[assetType] && Object.entries(subtypesMap).map(([subtype, assetsInSubtype]) => (
-                                    <React.Fragment key={subtype}>
-                                        <tr className="table-secondary">
-                                            <td colSpan="6" className="ps-4" onClick={() => toggleGroup(`${assetType}-${subtype}`)} style={{ cursor: 'pointer' }}>
-                                                <strong>Subtype: {subtype}</strong>
-                                                {collapsedGroups[`${assetType}-${subtype}`] ? <ChevronDown className="ms-2" /> : <ChevronUp className="ms-2" />}
-                                            </td>
-                                        </tr>
-                                        {!collapsedGroups[`${assetType}-${subtype}`] && assetsInSubtype.map(asset => (
-                                            <tr key={asset.id}>
-                                                <td>{asset.date}</td>
-                                                <td>{asset.asset_type_name}</td>
-                                                <td>{asset.asset_subtype_name || 'N/A'}</td>
-                                                <td>{asset.value}</td>
-                                                <td>{asset.note || 'N/A'}</td>
-                                                <td>
-                                                    <Button variant="info" size="sm" className="me-2" onClick={() => handleEditAsset(asset)}>Edit</Button>
-                                                    <Button variant="danger" size="sm" onClick={() => handleDeleteAsset(asset.id)}>Delete</Button>
+                <h5 className="mb-3">Existing Asset Records</h5>
+                {existingAssets.length === 0 ? (
+                    <Alert variant="info" className="text-center">
+                        No asset records found. Use the form above to record your first asset.
+                    </Alert>
+                ) : (
+                    <Table striped bordered hover responsive>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Asset Type</th>
+                                <th>Subtype</th>
+                                <th>Value</th>
+                                <th>Note</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Object.entries(
+                                existingAssets.reduce((acc, asset) => {
+                                    const assetType = asset.asset_type_name;
+                                    const assetSubtype = asset.asset_subtype_name || 'N/A';
+                                    if (!acc[assetType]) acc[assetType] = {};
+                                    if (!acc[assetType][assetSubtype]) acc[assetType][assetSubtype] = [];
+                                    acc[assetType][assetSubtype].push(asset);
+                                    return acc;
+                                }, {})
+                            ).map(([assetType, subtypesMap]) => (
+                                <React.Fragment key={assetType}>
+                                    <tr className="table-primary">
+                                        <td colSpan="6" onClick={() => toggleGroup(assetType)} style={{ cursor: 'pointer' }}>
+                                            <strong>Asset Type: {assetType}</strong>
+                                            {collapsedGroups[assetType] ? <ChevronDown className="ms-2" /> : <ChevronUp className="ms-2" />}
+                                        </td>
+                                    </tr>
+                                    {!collapsedGroups[assetType] && Object.entries(subtypesMap).map(([subtype, assetsInSubtype]) => (
+                                        <React.Fragment key={subtype}>
+                                            <tr className="table-secondary">
+                                                <td colSpan="6" className="ps-4" onClick={() => toggleGroup(`${assetType}-${subtype}`)} style={{ cursor: 'pointer' }}>
+                                                    <strong>Subtype: {subtype}</strong>
+                                                    {collapsedGroups[`${assetType}-${subtype}`] ? <ChevronDown className="ms-2" /> : <ChevronUp className="ms-2" />}
                                                 </td>
                                             </tr>
-                                        ))}
-                                    </React.Fragment>
-                                ))}
-                            </React.Fragment>
-                        ))}
-                    </tbody>
-                </Table>
+                                            {!collapsedGroups[`${assetType}-${subtype}`] && assetsInSubtype.map(asset => (
+                                                <tr key={asset.id}>
+                                                    <td>{asset.date}</td>
+                                                    <td>{asset.asset_type_name}</td>
+                                                    <td>{asset.asset_subtype_name || 'N/A'}</td>
+                                                    <td>{asset.value}</td>
+                                                    <td>{asset.note || 'N/A'}</td>
+                                                    <td>
+                                                        <Button variant="info" size="sm" className="me-2" onClick={() => handleEditAsset(asset)}><Pencil /></Button>
+                                                        <Button variant="danger" size="sm" onClick={() => handleDeleteAsset(asset.id)}><Trash /></Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </React.Fragment>
+                                    ))}
+                                </React.Fragment>
+                            ))}
+                        </tbody>
+                    </Table>
+                )}
             </Card.Footer>
         </Card>
     );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Table, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse, Tab, Tabs } from 'react-bootstrap';
+import { Form, Button, Table, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse, Tab, Tabs, Alert } from 'react-bootstrap';
 import { ChevronDown, ChevronUp, Pencil, Trash, Plus, Tags, PiggyBank, CreditCard } from 'react-bootstrap-icons';
 import ConfirmationModal from './ConfirmationModal'; // Import ConfirmationModal
 import { formatCurrency } from './utils/currency'; // Import formatCurrency
@@ -257,41 +257,47 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
           <Card className="mb-4">
             <Card.Header className="bg-primary text-white">Categories and Subcategories</Card.Header>
             <Card.Body>
-              {settings.categories && settings.categories.map((category, index) => (
-                <Card key={index} className="mb-3 border-info">
-                  <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center" onClick={() => toggleSubcategories(index)} style={{ cursor: 'pointer' }}>
-                    <strong>{category.name}</strong>
-                    <div>
-                      {openSubcategories[index] ? <ChevronUp /> : <ChevronDown />}
-                      <Button variant="light" size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); handleEditCategoryClick(index); }}><Pencil /></Button>{' '}
-                      <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteCategoryClick(index); }}><Trash /></Button>
-                    </div>
-                  </Card.Header>
-                  <Collapse in={openSubcategories[index]}>
-                    <div id={`subcategories-${index}`}>
-                      <Card.Body>
-                        <ListGroup>
-                          {category.subcategories && category.subcategories.map((subcategory, subIndex) => (
-                            <ListGroup.Item key={subIndex} className="d-flex justify-content-between align-items-center">
-                              {subcategory}
-                              <Button variant="danger" size="sm" onClick={() => handleDeleteSubcategoryClick(index, subIndex)}><Trash /></Button>
-                            </ListGroup.Item>
-                          ))}
-                        </ListGroup>
-                        <InputGroup className="mt-3">
-                          <Form.Control
-                            type="text"
-                            value={newSubcategoryInputs[index] || ''}
-                            onChange={(e) => setNewSubcategoryInputs(prev => ({ ...prev, [index]: e.target.value }))}
-                            placeholder="New subcategory name"
-                          />
-                          <Button variant="success" onClick={() => handleAddSubcategory(index)}><Plus /></Button>
-                        </InputGroup>
-                      </Card.Body>
-                    </div>
-                  </Collapse>
-                </Card>
-              ))}
+              {settings.categories && settings.categories.length > 0 ? (
+                settings.categories.map((category, index) => (
+                  <Card key={index} className="mb-3 border-info">
+                    <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center" onClick={() => toggleSubcategories(index)} style={{ cursor: 'pointer' }}>
+                      <strong>{category.name}</strong>
+                      <div>
+                        {openSubcategories[index] ? <ChevronUp /> : <ChevronDown />}
+                        <Button variant="light" size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); handleEditCategoryClick(index); }}><Pencil /></Button>{' '}
+                        <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteCategoryClick(index); }}><Trash /></Button>
+                      </div>
+                    </Card.Header>
+                    <Collapse in={openSubcategories[index]}>
+                      <div id={`subcategories-${index}`}>
+                        <Card.Body>
+                          <ListGroup>
+                            {category.subcategories && category.subcategories.map((subcategory, subIndex) => (
+                              <ListGroup.Item key={subIndex} className="d-flex justify-content-between align-items-center">
+                                {subcategory}
+                                <Button variant="danger" size="sm" onClick={() => handleDeleteSubcategoryClick(index, subIndex)}><Trash /></Button>
+                              </ListGroup.Item>
+                            ))}
+                          </ListGroup>
+                          <InputGroup className="mt-3">
+                            <Form.Control
+                              type="text"
+                              value={newSubcategoryInputs[index] || ''}
+                              onChange={(e) => setNewSubcategoryInputs(prev => ({ ...prev, [index]: e.target.value }))}
+                              placeholder="New subcategory name"
+                            />
+                            <Button variant="success" onClick={() => handleAddSubcategory(index)}><Plus /></Button>
+                          </InputGroup>
+                        </Card.Body>
+                      </div>
+                    </Collapse>
+                  </Card>
+                ))
+              ) : (
+                <Alert variant="info" className="text-center">
+                  No categories defined yet. Add your first category above!
+                </Alert>
+              )}
               <InputGroup className="mt-3">
                 <Form.Control
                   type="text"
@@ -412,9 +418,7 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
               </Form>
 
               <h5 className="mt-4">Current Budgets</h5>
-              {budgets.length === 0 ? (
-                <p>No budgets configured yet.</p>
-              ) : (
+              {budgets.length > 0 ? (
                 <Table striped bordered hover size="sm" className="mt-3">
                   <thead>
                     <tr>
@@ -462,6 +466,10 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                     })}
                   </tbody>
                 </Table>
+              ) : (
+                <Alert variant="info" className="text-center mt-3">
+                  No budgets configured yet. Add your first budget above!
+                </Alert>
               )}
             </Card.Body>
           </Card>

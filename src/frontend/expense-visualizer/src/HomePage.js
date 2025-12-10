@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Card, Alert } from 'react-bootstrap';
+import { Table, Card, Alert, Button, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import { formatCurrency } from './utils/currency';
+import { RocketFill, PlusCircle } from 'react-bootstrap-icons'; // Import icons
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
-const HomePage = ({ onProfileSelect }) => {
+const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome }) => {
     const [profilesSummary, setProfilesSummary] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -52,7 +53,24 @@ const HomePage = ({ onProfileSelect }) => {
     }
 
     if (profilesSummary.length === 0) {
-        return <Alert variant="info">No profiles found. Please create a profile to get started.</Alert>;
+        return (
+            <Card className="shadow-lg p-4 text-center">
+                <Card.Body>
+                    <RocketFill size={96} className="text-primary mb-4" />
+                    <h1 className="display-5 text-primary mb-3">Welcome to Your Financial Journey!</h1>
+                    <p className="lead mb-4">
+                        It looks like you haven't created any profiles yet. Let's get you started!
+                        Create your first profile to begin tracking expenses, managing assets, and gaining valuable financial insights.
+                    </p>
+                    <Button variant="primary" size="lg" onClick={() => setShowCreateProfileModalFromHome(true)}>
+                        <PlusCircle className="me-2" />Create Your First Profile
+                    </Button>
+                    <p className="mt-3 text-muted">
+                        (You can also create a profile using the '+' button in the sidebar)
+                    </p>
+                </Card.Body>
+            </Card>
+        );
     }
 
     return (
