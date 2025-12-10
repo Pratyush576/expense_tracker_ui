@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Alert, Badge } from 'react-bootstrap';
+import Card from 'react-bootstrap/Card';
 import axios from 'axios';
+import { ClipboardData } from 'react-bootstrap-icons'; // Import icon
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -35,34 +37,39 @@ const MyProposals = () => {
     };
 
     return (
-        <div>
-            <h2>My Proposals</h2>
-            {error && <Alert variant="danger">{error}</Alert>}
-            <Table striped bordered hover responsive>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Payload</th>
-                        <th>Rejection Reason</th>
-                        <th>Created At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {proposals.map(proposal => (
-                        <tr key={proposal.id}>
-                            <td>{proposal.id}</td>
-                            <td>{proposal.proposal_type}</td>
-                            <td>{getStatusBadge(proposal.status)}</td>
-                            <td><pre>{JSON.stringify(proposal.payload, null, 2)}</pre></td>
-                            <td>{proposal.rejection_reason || 'N/A'}</td>
-                            <td>{new Date(proposal.created_at).toLocaleString()}</td>
+        <Card className="mb-4">
+            <Card.Header className="bg-primary text-white d-flex align-items-center">
+                <ClipboardData className="me-2" />
+                <h5 className="mb-0">My Proposals</h5>
+            </Card.Header>
+            <Card.Body>
+                {error && <Alert variant="danger">{error}</Alert>}
+                <Table striped bordered hover responsive className="mt-3">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Payload</th>
+                            <th>Rejection Reason</th>
+                            <th>Created At</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {proposals.map(proposal => (
+                            <tr key={proposal.id}>
+                                <td>{proposal.id}</td>
+                                <td>{proposal.proposal_type}</td>
+                                <td>{getStatusBadge(proposal.status)}</td>
+                                <td><pre>{JSON.stringify(proposal.payload, null, 2)}</pre></td>
+                                <td>{proposal.rejection_reason || 'N/A'}</td>
+                                <td>{new Date(proposal.created_at).toLocaleString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </Card.Body>
+        </Card>
     );
 };
 

@@ -3,6 +3,7 @@ import { Table, Form, Button, Alert, Row, Col, InputGroup } from 'react-bootstra
 import Card from 'react-bootstrap/Card';
 import axios from 'axios';
 import { countryCodes } from '../../utils/country';
+import { CashStack, ListUl, PlusCircle } from 'react-bootstrap-icons'; // Import icons
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -53,18 +54,19 @@ const PriceManagement = () => {
 
     return (
         <div>
-            <h2>Geographic Price Management</h2>
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
 
             <Card className="mb-4">
-                <Card.Header>Add New Price</Card.Header>
+                <Card.Header className="bg-primary text-white d-flex align-items-center">
+                    <CashStack className="me-2" />
+                    <h5 className="mb-0">Add New Price</h5>
+                </Card.Header>
                 <Card.Body>
                     <Form onSubmit={handleAddPrice}>
-                        <Row>
+                        <Row className="g-3">
                             <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Country Code</Form.Label>
+                                <Form.Group controlId="formCountryCode" className="form-floating">
                                     <Form.Select name="country_code" value={newPrice.country_code} onChange={handleNewPriceChange} required>
                                         <option value="">Select Country</option>
                                         {countryCodes.map(country => (
@@ -73,57 +75,64 @@ const PriceManagement = () => {
                                             </option>
                                         ))}
                                     </Form.Select>
+                                    <Form.Label>Country Code</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Subscription Type</Form.Label>
+                                <Form.Group controlId="formSubscriptionType" className="form-floating">
                                     <Form.Select name="subscription_type" value={newPrice.subscription_type} onChange={handleNewPriceChange}>
                                         <option value="monthly">Monthly</option>
                                         <option value="yearly">Yearly</option>
                                     </Form.Select>
+                                    <Form.Label>Subscription Type</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={3}>
-                                <Form.Group>
-                                    <Form.Label>Price</Form.Label>
-                                    <InputGroup>
-                                        <Form.Control type="number" name="price" value={newPrice.price} onChange={handleNewPriceChange} placeholder="e.g., 9.99" required />
-                                        <InputGroup.Text>{newPrice.currency}</InputGroup.Text>
-                                    </InputGroup>
+                                <Form.Group controlId="formPrice" className="form-floating">
+                                    <Form.Control type="number" name="price" value={newPrice.price} onChange={handleNewPriceChange} placeholder="e.g., 9.99" required />
+                                    <Form.Label>Price ({newPrice.currency})</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={3} className="d-flex align-items-end">
-                                <Button type="submit" className="w-100">Add Price</Button>
+                                <Button type="submit" className="w-100">
+                                    <PlusCircle className="me-2" />Add Price
+                                </Button>
                             </Col>
                         </Row>
                     </Form>
                 </Card.Body>
             </Card>
 
-            <h3 className="mt-4">Existing Prices</h3>
-            <Table striped bordered hover responsive>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Country Code</th>
-                        <th>Subscription Type</th>
-                        <th>Price</th>
-                        <th>Currency</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {prices.map(price => (
-                        <tr key={price.id}>
-                            <td>{price.id}</td>
-                            <td>{price.country_code}</td>
-                            <td>{price.subscription_type}</td>
-                            <td>{price.price}</td>
-                            <td>{price.currency}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </Table>
+            <Card>
+                <Card.Header className="bg-primary text-white d-flex align-items-center">
+                    <ListUl className="me-2" />
+                    <h5 className="mb-0">Existing Prices</h5>
+                </Card.Header>
+                <Card.Body>
+                    <Table striped bordered hover responsive className="mt-3">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Country Code</th>
+                                <th>Subscription Type</th>
+                                <th>Price</th>
+                                <th>Currency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {prices.map(price => (
+                                <tr key={price.id}>
+                                    <td>{price.id}</td>
+                                    <td>{price.country_code}</td>
+                                    <td>{price.subscription_type}</td>
+                                    <td>{price.price}</td>
+                                    <td>{price.currency}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
         </div>
     );
 };

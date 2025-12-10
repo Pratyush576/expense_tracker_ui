@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Alert, Badge, Button, Modal, Form } from 'react-bootstrap';
+import Card from 'react-bootstrap/Card';
 import axios from 'axios';
+import { ClipboardCheck, CheckCircle, XCircle } from 'react-bootstrap-icons'; // Import icons
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -73,39 +75,44 @@ const ProposalQueue = () => {
     };
 
     return (
-        <div>
-            <h2>Proposals Review Queue</h2>
-            {error && <Alert variant="danger">{error}</Alert>}
-            {success && <Alert variant="success">{success}</Alert>}
-            <Table striped bordered hover responsive>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Proposer ID</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Payload</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {proposals.filter(p => p.status === 'pending').map(proposal => (
-                        <tr key={proposal.id}>
-                            <td>{proposal.id}</td>
-                            <td>{proposal.proposer_id}</td>
-                            <td>{proposal.proposal_type}</td>
-                            <td>{getStatusBadge(proposal.status)}</td>
-                            <td><pre>{JSON.stringify(proposal.payload, null, 2)}</pre></td>
-                            <td>{new Date(proposal.created_at).toLocaleString()}</td>
-                            <td>
-                                <Button variant="success" size="sm" className="me-2" onClick={() => handleApprove(proposal.id)}>Approve</Button>
-                                <Button variant="danger" size="sm" onClick={() => openRejectModal(proposal)}>Reject</Button>
-                            </td>
+        <Card className="mb-4">
+            <Card.Header className="bg-primary text-white d-flex align-items-center">
+                <ClipboardCheck className="me-2" />
+                <h5 className="mb-0">Proposals Review Queue</h5>
+            </Card.Header>
+            <Card.Body>
+                {error && <Alert variant="danger">{error}</Alert>}
+                {success && <Alert variant="success">{success}</Alert>}
+                <Table striped bordered hover responsive className="mt-3">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Proposer ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Payload</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {proposals.filter(p => p.status === 'pending').map(proposal => (
+                            <tr key={proposal.id}>
+                                <td>{proposal.id}</td>
+                                <td>{proposal.proposer_id}</td>
+                                <td>{proposal.proposal_type}</td>
+                                <td>{getStatusBadge(proposal.status)}</td>
+                                <td><pre>{JSON.stringify(proposal.payload, null, 2)}</pre></td>
+                                <td>{new Date(proposal.created_at).toLocaleString()}</td>
+                                <td>
+                                    <Button variant="success" size="sm" className="me-2" onClick={() => handleApprove(proposal.id)}><CheckCircle className="me-1" />Approve</Button>
+                                    <Button variant="danger" size="sm" onClick={() => openRejectModal(proposal)}><XCircle className="me-1" />Reject</Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </Card.Body>
 
             <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
                 <Modal.Header closeButton>
@@ -127,7 +134,7 @@ const ProposalQueue = () => {
                     <Button variant="danger" onClick={handleReject}>Confirm Rejection</Button>
                 </Modal.Footer>
             </Modal>
-        </div>
+        </Card>
     );
 };
 

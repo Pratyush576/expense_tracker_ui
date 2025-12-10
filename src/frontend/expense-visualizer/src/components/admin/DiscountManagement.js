@@ -1,10 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Form, Button, Alert, Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect, forwardRef } from 'react';
+import { Table, Form, Button, Alert, Row, Col, InputGroup } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import { TagFill, ListCheck, PlusCircle } from 'react-bootstrap-icons'; // Import icons
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+
+// Custom Input for DatePicker to support floating labels
+const CustomDatePickerInput = forwardRef(({ value, onClick, placeholder }, ref) => (
+    <Form.Control
+        type="text"
+        onClick={onClick}
+        value={value}
+        ref={ref}
+        placeholder={placeholder}
+        readOnly
+    />
+));
 
 const DiscountManagement = () => {
     const [discounts, setDiscounts] = useState([]);
@@ -65,72 +79,104 @@ const DiscountManagement = () => {
 
     return (
         <div>
-            <h2>Discount Management</h2>
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
 
             <Card className="mb-4">
-                <Card.Header>Add New Discount</Card.Header>
+                <Card.Header className="bg-primary text-white d-flex align-items-center">
+                    <TagFill className="me-2" />
+                    <h5 className="mb-0">Add New Discount</h5>
+                </Card.Header>
                 <Card.Body>
                     <Form onSubmit={handleAddDiscount}>
-                        <Row>
-                            <Col md={4}>
-                                <Form.Group>
-                                    <Form.Label>Discount Name</Form.Label>
+                        <Row className="g-3">
+                            <Col md={3}>
+                                <Form.Group controlId="formDiscountName" className="form-floating">
                                     <Form.Control type="text" name="name" value={newDiscount.name} onChange={handleNewDiscountChange} placeholder="e.g., Summer Sale" required />
+                                    <Form.Label>Discount Name</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
-                                    <Form.Label>Percentage</Form.Label>
+                                <Form.Group controlId="formDiscountPercentage" className="form-floating">
                                     <Form.Control type="number" name="discount_percentage" value={newDiscount.discount_percentage} onChange={handleNewDiscountChange} placeholder="e.g., 15" required />
+                                    <Form.Label>Percentage</Form.Label>
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
+                                <Form.Group controlId="formStartDate" className="form-floating">
+                                    <DatePicker
+                                        selected={newDiscount.start_date}
+                                        onChange={(date) => handleDateChange('start_date', date)}
+                                        customInput={<CustomDatePickerInput placeholder="Start Date" />}
+                                        dateFormat="MM/dd/yyyy"
+                                    />
                                     <Form.Label>Start Date</Form.Label>
-                                    <DatePicker selected={newDiscount.start_date} onChange={(date) => handleDateChange('start_date', date)} className="form-control" />
                                 </Form.Group>
                             </Col>
                             <Col md={2}>
-                                <Form.Group>
+                                <Form.Group controlId="formEndDate" className="form-floating">
+                                    <DatePicker
+                                        selected={newDiscount.end_date}
+                                        onChange={(date) => handleDateChange('end_date', date)}
+                                        customInput={<CustomDatePickerInput placeholder="End Date" />}
+                                        dateFormat="MM/dd/yyyy"
+                                    />
                                     <Form.Label>End Date</Form.Label>
-                                    <DatePicker selected={newDiscount.end_date} onChange={(date) => handleDateChange('end_date', date)} className="form-control" />
+                                </Form.Group>
+                            </Col>
+                            <Col md={1} className="d-flex align-items-center">
+                                <Form.Group controlId="formIsActive" className="form-check form-switch">
+                                    <Form.Check
+                                        type="checkbox"
+                                        name="is_active"
+                                        label="Active"
+                                        checked={newDiscount.is_active}
+                                        onChange={handleNewDiscountChange}
+                                    />
                                 </Form.Group>
                             </Col>
                             <Col md={2} className="d-flex align-items-end">
-                                <Button type="submit" className="w-100">Add Discount</Button>
+                                <Button type="submit" className="w-100">
+                                    <PlusCircle className="me-2" />Add Discount
+                                </Button>
                             </Col>
                         </Row>
                     </Form>
                 </Card.Body>
             </Card>
 
-            <h3 className="mt-4">Existing Discounts</h3>
-            <Table striped bordered hover responsive>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Percentage</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Active</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {discounts.map(discount => (
-                        <tr key={discount.id}>
-                            <td>{discount.id}</td>
-                            <td>{discount.name}</td>
-                            <td>{discount.discount_percentage}%</td>
-                            <td>{new Date(discount.start_date).toLocaleDateString()}</td>
-                            <td>{new Date(discount.end_date).toLocaleDateString()}</td>
-                            <td>{discount.is_active ? 'Yes' : 'No'}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </Table>
+            <Card>
+                <Card.Header className="bg-primary text-white d-flex align-items-center">
+                    <ListCheck className="me-2" />
+                    <h5 className="mb-0">Existing Discounts</h5>
+                </Card.Header>
+                <Card.Body>
+                    <Table striped bordered hover responsive className="mt-3">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Percentage</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Active</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {discounts.map(discount => (
+                                <tr key={discount.id}>
+                                    <td>{discount.id}</td>
+                                    <td>{discount.name}</td>
+                                    <td>{discount.discount_percentage}%</td>
+                                    <td>{new Date(discount.start_date).toLocaleDateString()}</td>
+                                    <td>{new Date(discount.end_date).toLocaleDateString()}</td>
+                                    <td>{discount.is_active ? 'Yes' : 'No'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
         </div>
     );
 };
