@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Table, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse, Tab, Tabs, Alert } from 'react-bootstrap';
-import { ChevronDown, ChevronUp, Pencil, Trash, Plus, Tags, PiggyBank, CreditCard } from 'react-bootstrap-icons';
+import { ChevronDown, ChevronUp, Pencil, Trash, Plus, Tags, PiggyBank, CreditCard, ArrowRight } from 'react-bootstrap-icons';
 import ConfirmationModal from './ConfirmationModal'; // Import ConfirmationModal
 import { formatCurrency } from './utils/currency'; // Import formatCurrency
 import PaymentSourceManager from './components/PaymentSourceManager'; // Import PaymentSourceManager
@@ -57,6 +57,9 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
   const [newBudgetMonth, setNewBudgetMonth] = useState([]); // Array for multiple months
   const [newBudgetAmount, setNewBudgetAmount] = useState('');
   const [editingBudgetIndex, setEditingBudgetIndex] = useState(null); // Index of budget being edited
+  const [selectedBudgetYearFilter, setSelectedBudgetYearFilter] = useState('All');
+  const [sourceCopyYear, setSourceCopyYear] = useState(new Date().getFullYear().toString());
+  const [targetCopyYear, setTargetCopyYear] = useState((new Date().getFullYear() + 1).toString());
 
   // Currency state
   const [currentCurrency, setCurrentCurrency] = useState(settings.currency || 'USD');
@@ -233,7 +236,14 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
     setEditingBudgetIndex(index);
   };
 
-  const handleDeleteBudgetClick = (index) => {
+  const _deleteBudget = (index) => {
+    const updatedBudgets = budgets.filter((_, i) => i !== index);
+    setBudgets(updatedBudgets);
+    onSave({ categories, rules: settings.rules, budgets: updatedBudgets });
+    setShowConfirmModal(false);
+  };
+
+  const handleDeleteBudget = (index) => {
     const budgetToDelete = budgets[index];
     setConfirmModalTitle('Confirm Budget Deletion');
     setConfirmModalMessage(`Are you sure you want to delete the budget for "${budgetToDelete.category}" for ${budgetToDelete.months && budgetToDelete.months.length > 0 ? budgetToDelete.months.map(monthNum => new Date(0, monthNum - 1).toLocaleString('default', { month: 'long' })).join(', ') + ' ' : ''}${budgetToDelete.year} with amount ${budgetToDelete.amount.toFixed(2)}? This action cannot be undone.`);
@@ -241,11 +251,44 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
     setShowConfirmModal(true);
   };
 
-  const _deleteBudget = (index) => {
-    const updatedBudgets = budgets.filter((_, i) => i !== index);
-    setBudgets(updatedBudgets);
-    onSave({ categories, rules: settings.rules, budgets: updatedBudgets });
-    setShowConfirmModal(false);
+  const handleCopyBudgets = () => {
+    if (!sourceCopyYear || !targetCopyYear) {
+      alert('Please select both source and target years.');
+      return;
+    }
+    if (sourceCopyYear === targetCopyYear) {
+      alert('Source and target years cannot be the same.');
+      return;
+    }
+
+    const budgetsToCopy = budgets.filter(budget => budget.year.toString() === sourceCopyYear);
+
+    if (budgetsToCopy.length === 0) {
+      alert(`No budgets found for the year ${sourceCopyYear} to copy.`);
+      return;
+    }
+
+    let newBudgets = [...budgets];
+    let copiedCount = 0;
+    let skippedCount = 0;
+
+    budgetsToCopy.forEach(budget => {
+      const newBudget = { ...budget, year: parseInt(targetCopyYear) };
+      // Check for overlap with existing budgets, excluding the ones being copied from the source year
+      const budgetsForValidation = newBudgets.filter(b => b.year.toString() !== targetCopyYear);
+
+      if (isBudgetOverlap(newBudget, budgetsForValidation)) {
+        console.warn(`Skipping budget for ${newBudget.category} in ${newBudget.year} due to overlap.`);
+        skippedCount++;
+      } else {
+        newBudgets.push(newBudget);
+        copiedCount++;
+      }
+    });
+
+    setBudgets(newBudgets);
+    onSave({ categories, rules: settings.rules, budgets: newBudgets, currency: currentCurrency });
+    alert(`Successfully copied ${copiedCount} budgets from ${sourceCopyYear} to ${targetCopyYear}. ${skippedCount > 0 ? `Skipped ${skippedCount} budgets due to overlaps.` : ''}`);
   };
 
   const availableCategories = [{ name: "ALL_CATEGORIES", subcategories: [] }, ...categories];
@@ -317,28 +360,6 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
             <Card.Header className="bg-primary text-white">Budget Management</Card.Header>
             <Card.Body>
               <Form>
-                <Row className="mb-3">
-                  <Form.Group as={Col} controlId="formCurrency">
-                    <Form.Label>Currency</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={currentCurrency}
-                      onChange={(e) => setCurrentCurrency(e.target.value)}
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="JPY">JPY (¥)</option>
-                      <option value="INR">INR (₹)</option>
-                      <option value="AUD">AUD (A$)</option>
-                      <option value="CAD">CAD (C$)</option>
-                      <option value="CHF">CHF (CHF)</option>
-                      <option value="CNY">CNY (¥)</option>
-                      <option value="SEK">SEK (kr)</option>
-                      <option value="NZD">NZD (NZ$)</option>
-                    </Form.Control>
-                  </Form.Group>
-                </Row>
                 <Row className="mb-3">
                   <Form.Group as={Col} controlId="formBudgetCategory">
                     <Form.Label>Category</Form.Label>
@@ -417,60 +438,115 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                 )}
               </Form>
 
-              <h5 className="mt-4">Current Budgets</h5>
-              {budgets.length > 0 ? (
-                <Table striped bordered hover size="sm" className="mt-3">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Year</th>
-                      <th>Months</th>
-                      <th>Amount</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Sort budgets by year (descending, 'All Years' first) and then by month (ascending, 'All Months' first) */}
-                    {[...budgets].sort((a, b) => {
-                      // Sort by Year
-                      if (a.year !== b.year) return b.year - a.year; // Latest year first
+              {/* Budget Copy Section */}
+              <Card className="mb-4 custom-card">
+                <Card.Header className="custom-card-header">
+                  <h5 className="mb-0">Copy Budgets to Another Year</h5>
+                </Card.Header>
+                <Card.Body>
+                  <Row className="mb-3">
+                    <Col md={5}>
+                      <Form.Group controlId="sourceCopyYear">
+                        <Form.Label>Source Year</Form.Label>
+                        <Form.Select
+                          value={sourceCopyYear}
+                          onChange={(e) => setSourceCopyYear(e.target.value)}
+                        >
+                          {[...new Set(budgets.map(b => b.year))].sort((a, b) => a - b).map(year => (
+                            <option key={`source-${year}`} value={year}>{year}</option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={2} className="d-flex align-items-end justify-content-center">
+                      <ArrowRight size={24} />
+                    </Col>
+                    <Col md={5}>
+                      <Form.Group controlId="targetCopyYear">
+                        <Form.Label>Target Year</Form.Label>
+                        <Form.Select
+                          value={targetCopyYear}
+                          onChange={(e) => setTargetCopyYear(e.target.value)}
+                        >
+                          {[...new Set([...budgets.map(b => b.year), new Date().getFullYear(), new Date().getFullYear() + 1])].sort((a, b) => a - b).map(year => (
+                            <option key={`target-${year}`} value={year}>{year}</option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <Button variant="primary" onClick={handleCopyBudgets}>Copy Budgets</Button>
+                </Card.Body>
+              </Card>
 
-                      // If years are the same, sort by Months
-                      const aMonths = a.months || [];
-                      const bMonths = b.months || [];
+              {/* Existing Budget Management Section */}
+              <Card className="mb-4 custom-card">
+                <Card.Header className="custom-card-header">
+                  <h5 className="mb-0">Current Budgets</h5>
+                </Card.Header>
+                <Card.Body>
+                  {budgets.length > 0 ? (
+                    <>
+                      <Form.Group controlId="budgetYearFilter" className="mb-3">
+                        <Form.Label>Filter by Year</Form.Label>
+                        <Form.Select
+                          value={selectedBudgetYearFilter}
+                          onChange={(e) => setSelectedBudgetYearFilter(e.target.value)}
+                        >
+                          <option value="All">All Years</option>
+                          {[...new Set(budgets.map(b => b.year))].sort((a, b) => a - b).map(year => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                      <Table striped bordered hover responsive className="mt-3">
+                        <thead>
+                          <tr>
+                            <th>Category</th>
+                            <th>Year</th>
+                            <th>Months</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...budgets]
+                            .filter(budget => selectedBudgetYearFilter === 'All' || budget.year.toString() === selectedBudgetYearFilter)
+                            .sort((a, b) => {
+                              // Sort budgets by year (descending, 'All Years' first) and then by month (ascending, 'All Months' first)
+                              const yearA = a.year || Infinity; // Treat null/undefined year as last
+                              const yearB = b.year || Infinity;
+                              if (yearA !== yearB) {
+                                return yearB - yearA; // Sort years descending
+                              }
 
-                      if (aMonths.length === 0 && bMonths.length !== 0) return -1;
-                      if (aMonths.length !== 0 && bMonths.length === 0) return 1;
-                      if (aMonths.length !== 0 && bMonths.length !== 0) {
-                        const minAMonth = Math.min(...aMonths);
-                        const minBMonth = Math.min(...bMonths);
-                        if (minAMonth !== minBMonth) return minAMonth - minBMonth;
-                      }
-
-                      // If years and months are the same, sort by category
-                      return a.category.localeCompare(b.category);
-                    }).map((budget) => {
-                      const originalIndex = budgets.indexOf(budget);
-                      return (
-                      <tr key={originalIndex}>
-                        <td>{budget.category}</td>
-                        <td>{budget.year}</td>
-                        <td>{budget.months && budget.months.length > 0 ? budget.months.map(monthNum => new Date(0, monthNum - 1).toLocaleString('default', { month: 'short' })).join(', ') : 'All'}</td>
-                        <td>{formatCurrency(budget.amount, currentCurrency)}</td>
-                        <td>
-                          <Button variant="info" size="sm" onClick={() => handleEditBudget(originalIndex)}><Pencil /></Button>{' '}
-                          <Button variant="danger" size="sm" onClick={() => handleDeleteBudgetClick(originalIndex)}><Trash /></Button>
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              ) : (
-                <Alert variant="info" className="text-center mt-3">
-                  No budgets configured yet. Add your first budget above!
-                </Alert>
-              )}
+                              const monthsA = a.months && a.months.length > 0 ? Math.min(...a.months) : -1; // -1 for 'All Months'
+                              const monthsB = b.months && b.months.length > 0 ? Math.min(...b.months) : -1; // -1 for 'All Months'
+                              return monthsA - monthsB; // Sort months ascending
+                            })
+                            .map((budget, index) => {
+                              const originalIndex = budgets.indexOf(budget); // Get original index for editing/deleting
+                              return (
+                                <tr key={originalIndex}>
+                                  <td>{budget.category}</td>
+                                  <td>{budget.year}</td>
+                                  <td>{budget.months && budget.months.length > 0 ? budget.months.map(monthNum => new Date(0, monthNum - 1).toLocaleString('default', { month: 'short' })).join(', ') : 'All'}</td>
+                                  <td>{formatCurrency(budget.amount, currentCurrency)}</td>
+                                  <td>
+                                    <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEditBudget(originalIndex)}>Edit</Button>
+                                    <Button variant="outline-danger" size="sm" onClick={() => handleDeleteBudget(originalIndex)}>Delete</Button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </Table>
+                    </>
+                  ) : (
+                    <Alert variant="info" className="mt-3">No budgets configured yet. Add your first budget above!</Alert>
+                  )}
+                </Card.Body>
+              </Card>
             </Card.Body>
           </Card>
         </Tab>

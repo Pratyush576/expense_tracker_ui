@@ -415,7 +415,7 @@ function MainApp({ currentUser, onSubscribe }) {
                         </Tab>
 
                         {currentUser?.is_premium ? (
-                            activeProfileId && activeProfileType === "EXPENSE_MANAGER" && profileTypeLoaded && (
+                            activeProfileId && profileTypeLoaded && (
                                 <Tab eventKey="profileDashboard" title="Profile Dashboard">
                                     {activeProfileId ? (
                                         <div>
