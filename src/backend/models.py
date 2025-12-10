@@ -132,13 +132,13 @@ class Profile(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
 
     user: Optional[User] = Relationship(back_populates="profiles")
-    transactions: List["Transaction"] = Relationship(back_populates="profile")
-    categories: List["Category"] = Relationship(back_populates="profile")
-    rules: List["Rule"] = Relationship(back_populates="profile")
-    budgets: List["Budget"] = Relationship(back_populates="profile")
-    payment_sources: List["PaymentSource"] = Relationship(back_populates="profile")
-    asset_types: List["AssetType"] = Relationship(back_populates="profile") # New relationship
-    assets: List["Asset"] = Relationship(back_populates="profile") # New relationship
+    transactions: List["Transaction"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    categories: List["Category"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    rules: List["Rule"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    budgets: List["Budget"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    payment_sources: List["PaymentSource"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    asset_types: List["AssetType"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # New relationship
+    assets: List["Asset"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # New relationship
 
 
 class PaymentSource(SQLModel, table=True):
