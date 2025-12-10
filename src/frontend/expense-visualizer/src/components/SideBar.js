@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ListGroup, Button, Dropdown } from 'react-bootstrap'; // Import Tooltip, OverlayTrigger, and Dropdown
-import { PlusCircle, PersonGear } from 'react-bootstrap-icons'; // Import icons, including PlusCircle and PersonGear
+import { PlusCircle, PersonGear, Briefcase, GraphUp, Gear, Pencil, Key } from 'react-bootstrap-icons'; // Import icons
 import CreateProfileModal from './CreateProfileModal';
 import ManageProfilesModal from './ManageProfilesModal'; // Import ManageProfilesModal
 import UserProfileEditModal from './UserProfileEditModal'; // New: Import UserProfileEditModal
@@ -28,12 +28,24 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
         return acc;
     }, {});
 
+    const getProfileTypeIcon = (profileType) => {
+        switch (profileType) {
+            case 'EXPENSE_MANAGER':
+                return <Briefcase className="me-2" />;
+            case 'ASSET_MANAGER':
+                return <GraphUp className="me-2" />;
+            default:
+                return null;
+        }
+    };
+
     return (
         <div className="sidebar-container">
             <ListGroup>
                 {Object.entries(groupedProfiles).map(([type, profilesInGroup]) => (
                     <div key={type}>
                         <ListGroup.Item className="sidebar-group-heading text-uppercase fw-bold" active={false}>
+                            {getProfileTypeIcon(type)}
                             {type.replace('_', ' ')}
                         </ListGroup.Item>
                         {profilesInGroup.map(profile => (
@@ -61,9 +73,9 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => setShowManageProfilesModal(true)}>Manage Profiles</Dropdown.Item>
-                        <Dropdown.Item onClick={() => setShowUserProfileEditModal(true)}>Edit Profile</Dropdown.Item>
-                        <Dropdown.Item onClick={() => setShowChangePasswordModal(true)}>Change Password</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowManageProfilesModal(true)}><Gear className="me-2" />Manage Profiles</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowUserProfileEditModal(true)}><Pencil className="me-2" />Edit Profile</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setShowChangePasswordModal(true)}><Key className="me-2" />Change Password</Dropdown.Item>
                     </Dropdown.Menu>
                 </Dropdown>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Table, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse } from 'react-bootstrap';
+import { Pencil, Trash, Plus, FileEarmarkPlus, ListTask } from 'react-bootstrap-icons';
 import ComplexRuleBuilder from './ComplexRuleBuilder'; // Import the new component
 import ConfirmationModal from './ConfirmationModal'; // Import ConfirmationModal
 
@@ -74,7 +75,21 @@ const RulesTab = ({ settings, onSave, categories, paymentSources }) => {
 
   return (
     <Card className="mt-4">
-      <Card.Header className="bg-primary text-white">Rules</Card.Header>
+              <Card className="mt-3">
+                <Card.Header className="bg-primary text-white"><FileEarmarkPlus className="me-2" />Add New Rule</Card.Header>
+                  <Card.Body>
+                    <ComplexRuleBuilder
+                      rule={newRule}
+                      onRuleChange={setNewRule}
+                      categories={categories}
+                      paymentSources={paymentSources}
+                    />
+                  <Button variant="primary" onClick={handleAddRule} className="mt-3"><Plus className="me-2" />Add Rule</Button>
+                </Card.Body>
+              </Card>
+              <Card className="mt-3"></Card>
+
+      <Card.Header className="bg-primary text-white"><ListTask className="me-2" />Existing Rules</Card.Header>
       <Card.Body>
         <Table striped bordered hover>
           <thead>
@@ -105,25 +120,13 @@ const RulesTab = ({ settings, onSave, categories, paymentSources }) => {
                 </td>
                 <td>{rule.note}</td>
                 <td>
-                  <Button variant="warning" size="sm" onClick={() => handleEditRuleClick(index)}>Edit</Button>{' '}
-                  <Button variant="danger" size="sm" onClick={() => handleDeleteRuleClick(index)}>Delete</Button>
+                  <Button variant="warning" size="sm" onClick={() => handleEditRuleClick(index)}><Pencil /></Button>{' '}
+                  <Button variant="danger" size="sm" onClick={() => handleDeleteRuleClick(index)}><Trash /></Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
-        <Card className="mt-3">
-          <Card.Header>Add New Rule</Card.Header>
-          <Card.Body>
-            <ComplexRuleBuilder
-              rule={newRule}
-              onRuleChange={setNewRule}
-              categories={categories}
-              paymentSources={paymentSources}
-            />
-            <Button variant="primary" onClick={handleAddRule} className="mt-3">Add Rule</Button>
-          </Card.Body>
-        </Card>
       </Card.Body>
 
       {/* Rule Edit Modal */}

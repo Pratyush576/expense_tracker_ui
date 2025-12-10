@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Table, Card, Row, Col, ListGroup, Modal, InputGroup, Collapse, Tab, Tabs } from 'react-bootstrap';
-import { ChevronDown, ChevronUp } from 'react-bootstrap-icons';
+import { ChevronDown, ChevronUp, Pencil, Trash, Plus, Tags, PiggyBank, CreditCard } from 'react-bootstrap-icons';
 import ConfirmationModal from './ConfirmationModal'; // Import ConfirmationModal
 import { formatCurrency } from './utils/currency'; // Import formatCurrency
 import PaymentSourceManager from './components/PaymentSourceManager'; // Import PaymentSourceManager
@@ -253,7 +253,7 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
   return (
     <div>
       <Tabs activeKey={settingsSubTabKey} onSelect={(k) => setSettingsSubTabKey(k)} className="mb-3">
-        <Tab eventKey="categories" title="Categories and Subcategories">
+        <Tab eventKey="categories" title={<><Tags className="me-2" />Categories and Subcategories</>}>
           <Card className="mb-4">
             <Card.Header className="bg-primary text-white">Categories and Subcategories</Card.Header>
             <Card.Body>
@@ -263,8 +263,8 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                     <strong>{category.name}</strong>
                     <div>
                       {openSubcategories[index] ? <ChevronUp /> : <ChevronDown />}
-                      <Button variant="light" size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); handleEditCategoryClick(index); }}>Edit</Button>{' '}
-                      <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteCategoryClick(index); }}>Delete</Button>
+                      <Button variant="light" size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); handleEditCategoryClick(index); }}><Pencil /></Button>{' '}
+                      <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteCategoryClick(index); }}><Trash /></Button>
                     </div>
                   </Card.Header>
                   <Collapse in={openSubcategories[index]}>
@@ -274,7 +274,7 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                           {category.subcategories && category.subcategories.map((subcategory, subIndex) => (
                             <ListGroup.Item key={subIndex} className="d-flex justify-content-between align-items-center">
                               {subcategory}
-                              <Button variant="danger" size="sm" onClick={() => handleDeleteSubcategoryClick(index, subIndex)}>Delete</Button>
+                              <Button variant="danger" size="sm" onClick={() => handleDeleteSubcategoryClick(index, subIndex)}><Trash /></Button>
                             </ListGroup.Item>
                           ))}
                         </ListGroup>
@@ -285,7 +285,7 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                             onChange={(e) => setNewSubcategoryInputs(prev => ({ ...prev, [index]: e.target.value }))}
                             placeholder="New subcategory name"
                           />
-                          <Button variant="success" onClick={() => handleAddSubcategory(index)}>Add Subcategory</Button>
+                          <Button variant="success" onClick={() => handleAddSubcategory(index)}><Plus /></Button>
                         </InputGroup>
                       </Card.Body>
                     </div>
@@ -299,13 +299,13 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="New category name"
                 />
-                <Button variant="success" onClick={handleAddCategory}>Add Category</Button>
+                <Button variant="success" onClick={handleAddCategory}><Plus /></Button>
               </InputGroup>
             </Card.Body>
           </Card>
         </Tab>
 
-        <Tab eventKey="budgets" title="Budget Management">
+        <Tab eventKey="budgets" title={<><PiggyBank className="me-2" />Budget Management</>}>
           {/* Budget Management Section */}
           <Card className="mb-4">
             <Card.Header className="bg-primary text-white">Budget Management</Card.Header>
@@ -396,7 +396,7 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                   </Form.Group>
                 </Row>
                 <Button variant={editingBudgetIndex !== null ? "warning" : "success"} onClick={handleAddUpdateBudget}>
-                  {editingBudgetIndex !== null ? "Update Budget" : "Add Budget"}
+                  {editingBudgetIndex !== null ? <><Pencil className="me-2" />Update Budget</> : <><Plus className="me-2" />Add Budget</>}
                 </Button>
                 {editingBudgetIndex !== null && (
                   <Button variant="secondary" className="ms-2" onClick={() => {
@@ -454,8 +454,8 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
                         <td>{budget.months && budget.months.length > 0 ? budget.months.map(monthNum => new Date(0, monthNum - 1).toLocaleString('default', { month: 'short' })).join(', ') : 'All'}</td>
                         <td>{formatCurrency(budget.amount, currentCurrency)}</td>
                         <td>
-                          <Button variant="info" size="sm" onClick={() => handleEditBudget(originalIndex)}>Edit</Button>{' '}
-                          <Button variant="danger" size="sm" onClick={() => handleDeleteBudgetClick(originalIndex)}>Delete</Button>
+                          <Button variant="info" size="sm" onClick={() => handleEditBudget(originalIndex)}><Pencil /></Button>{' '}
+                          <Button variant="danger" size="sm" onClick={() => handleDeleteBudgetClick(originalIndex)}><Trash /></Button>
                         </td>
                       </tr>
                       );
@@ -467,7 +467,7 @@ const Settings = ({ settings, onSave, currency, profileId, profileType }) => {
           </Card>
         </Tab>
 
-        <Tab eventKey="paymentSources" title="Manage Payment Sources">
+        <Tab eventKey="paymentSources" title={<><CreditCard className="me-2" />Manage Payment Sources</>}>
           {/* Payment Source Management Section */}
           <PaymentSourceManager profileId={profileId} />
         </Tab>
