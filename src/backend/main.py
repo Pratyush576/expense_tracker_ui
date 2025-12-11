@@ -1657,6 +1657,8 @@ async def get_budget_vs_expenses(
 class RoleUpdate(BaseModel):
     role: Role
 
+from fastapi.encoders import jsonable_encoder
+
 class LogActivityRequest(BaseModel):
     activity_type: ActivityType
     profile_id: Optional[int] = None
@@ -1668,6 +1670,8 @@ def log_generic_activity(
     session: Session = Depends(get_session),
     current_user: User = Depends(auth.get_current_active_user),
 ):
+    # Log the received payload for debugging
+    logging.info(f"Received log_activity request payload: {jsonable_encoder(log_request)}")
     log_activity(session, current_user.id, log_request.activity_type, request, profile_id=log_request.profile_id)
     return {"message": f"Activity '{log_request.activity_type}' logged successfully"}
 
