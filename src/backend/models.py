@@ -101,6 +101,8 @@ class User(SQLModel, table=True):
     mobile_phone_number: Optional[str] = None
     subscription_expiry_date: Optional[datetime] = Field(default=None)
     role: Role = Field(default=Role.USER)
+    account_creation_time: datetime = Field(default_factory=datetime.utcnow)
+    account_updated_time: datetime = Field(default_factory=datetime.utcnow, sa_column_kwargs={"onupdate": datetime.utcnow})
 
     profiles: List["Profile"] = Relationship(back_populates="user")
     subscription_history: List["SubscriptionHistory"] = Relationship(back_populates="user")

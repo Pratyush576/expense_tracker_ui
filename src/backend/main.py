@@ -82,6 +82,20 @@ def on_startup():
                 session.execute(text("ALTER TABLE user ADD COLUMN role VARCHAR(50) DEFAULT 'USER'"))
                 session.commit()
                 logging.info("Added 'role' column to 'user' table.")
+            
+            if "account_creation_time" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN account_creation_time DATETIME"))
+                session.commit()
+                session.execute(text(f"UPDATE user SET account_creation_time = '{datetime.utcnow().isoformat()}' WHERE account_creation_time IS NULL"))
+                session.commit()
+                logging.info("Added 'account_creation_time' column to 'user' table and populated existing rows.")
+
+            if "account_updated_time" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN account_updated_time DATETIME"))
+                session.commit()
+                session.execute(text(f"UPDATE user SET account_updated_time = '{datetime.utcnow().isoformat()}' WHERE account_updated_time IS NULL"))
+                session.commit()
+                logging.info("Added 'account_updated_time' column to 'user' table and populated existing rows.")
 
         columns = inspector.get_columns("profile")
         column_names = [col['name'] for col in columns]
@@ -238,7 +252,7 @@ def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
 
 
 @app.put("/api/users/me", response_model=UserResponse)
-def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
+def update_users_me(user_update: UserUpdate, request: Request, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
     if user_update.user_first_name is not None:
         current_user.user_first_name = user_update.user_first_name
     if user_update.user_last_name is not None:
