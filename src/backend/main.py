@@ -500,7 +500,7 @@ def create_transactions_bulk(
     for db_transaction in created_transactions:
         session.refresh(db_transaction)
     
-    log_activity(session, current_user.id, ActivityType.TRANSACTION_RECORDED, request, profile_id=transaction_list.transactions[0].profile_id)
+    log_activity(session, current_user.id, ActivityType.TRANSACTION_BULK_UPLOADED, request, profile_id=transaction_list.transactions[0].profile_id)
     return created_transactions
 
 
@@ -1740,6 +1740,75 @@ def get_recent_activities(
         .limit(limit)
     ).all()
     return activities
+
+class ActivityLogGroup(str, Enum):
+    HOUR = "hour"
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
+    QUARTER = "quarter"
+    YEAR = "year"
+
+@app.get("/api/admin/activity/logs")
+def get_activity_logs(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+    start_date: Optional[datetime] = Query(None, description="Start date for filtering activities"),
+    end_date: Optional[datetime] = Query(None, description="End date for filtering activities"),
+    group_by: ActivityLogGroup = Query(ActivityLogGroup.DAY, description="Group activities by hour, day, week, month, quarter, or year"),
+    profile_id: Optional[int] = Query(None, description="Filter activities by profile ID"),
+    user_id: Optional[int] = Query(None, description="Filter activities by user ID"),
+    activity_type: Optional[ActivityType] = Query(None, description="Filter activities by activity type"),
+):
+    statement = select(UserActivity)
+
+    if start_date:
+        statement = statement.where(UserActivity.timestamp >= start_date)
+    if end_date:
+        statement = statement.where(UserActivity.timestamp <= end_date)
+    if profile_id:
+        statement = statement.where(UserActivity.profile_id == profile_id)
+    if user_id:
+        statement = statement.where(UserActivity.user_id == user_id)
+    if activity_type:
+        statement = statement.where(UserActivity.activity_type == activity_type)
+
+    activities = session.exec(statement).all()
+
+    # Grouping logic
+    grouped_data = {}
+    for activity in activities:
+        timestamp = activity.timestamp
+        key = None
+
+        if group_by == ActivityLogGroup.HOUR:
+            key = timestamp.strftime("%Y-%m-%d %H:00")
+        elif group_by == ActivityLogGroup.DAY:
+            key = timestamp.strftime("%Y-%m-%d")
+        elif group_by == ActivityLogGroup.WEEK:
+            key = timestamp.strftime("%Y-W%W")
+        elif group_by == ActivityLogGroup.MONTH:
+            key = timestamp.strftime("%Y-%m")
+        elif group_by == ActivityLogGroup.QUARTER:
+            quarter = (timestamp.month - 1) // 3 + 1
+            key = f"{timestamp.year}-Q{quarter}"
+        elif group_by == ActivityLogGroup.YEAR:
+            key = timestamp.strftime("%Y")
+        
+        if key not in grouped_data:
+            grouped_data[key] = {}
+        
+        activity_type_str = activity.activity_type.value if isinstance(activity.activity_type, Enum) else activity.activity_type
+        grouped_data[key][activity_type_str] = grouped_data[key].get(activity_type_str, 0) + 1
+    
+    # Format output for easier consumption by frontend (e.g., list of dicts)
+    result = []
+    for time_key, counts in sorted(grouped_data.items()):
+        entry = {"time_period": time_key}
+        entry.update(counts)
+        result.append(entry)
+
+    return result
 
 # --- Pricing Endpoints ---
 

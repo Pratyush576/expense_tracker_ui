@@ -8,6 +8,7 @@ import DiscountManagement from './admin/DiscountManagement';
 import ProposalForm from './admin/ProposalForm';
 import MyProposals from './admin/MyProposals';
 import ProposalQueue from './admin/ProposalQueue';
+import LogDashboard from './admin/LogDashboard'; // Import LogDashboard
 import authService from '../utils/authService';
 
 const AdminPanel = ({ currentUser }) => {
@@ -25,6 +26,7 @@ const AdminPanel = ({ currentUser }) => {
         isAdmin && <Route key="pricing" path="pricing" element={<PriceManagement />} />,
         isAdmin && <Route key="discounts" path="discounts" element={<DiscountManagement />} />,
         isAdmin && <Route key="proposals" path="proposals" element={<ProposalQueue />} />,
+        isAdmin && <Route key="logs" path="logs" element={<LogDashboard />} />,
         (isAdmin || isManager) && <Route key="my-proposals" path="my-proposals" element={<MyProposals />} />,
         (isAdmin || isManager) && <Route key="new-proposal" path="new-proposal" element={<ProposalForm />} />,
         <Route key="index" index element={<h2 className="text-center my-4">Welcome to the Admin Panel</h2>} />
@@ -39,6 +41,7 @@ const AdminPanel = ({ currentUser }) => {
                         {isAdmin && <Nav.Link as={Link} to="pricing" className="d-flex align-items-center"><CashStack className="me-2" />Pricing</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="discounts" className="d-flex align-items-center"><TagFill className="me-2" />Discounts</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="proposals" className="d-flex align-items-center"><ClipboardCheck className="me-2" />Proposals</Nav.Link>}
+                        {isAdmin && <Nav.Link as={Link} to="logs" className="d-flex align-items-center"><ClipboardData className="me-2" />Activity Logs</Nav.Link>}
                         
                         {(isAdmin || isManager) && <Nav.Link as={Link} to="my-proposals" className="d-flex align-items-center"><ClipboardData className="me-2" />My Proposals</Nav.Link>}
                         {(isAdmin || isManager) && <Nav.Link as={Link} to="new-proposal" className="d-flex align-items-center"><FileEarmarkPlus className="me-2" />New Proposal</Nav.Link>}

@@ -10,7 +10,7 @@ import Papa from 'papaparse';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 const ActivityType = {
-    TRANSACTION_BULK_UPLOADED: "TRANSACTION_BULK_UPLOADED",
+    TRANSACTION_BULK_UPLOAD_CLICKED: "TRANSACTION_BULK_UPLOAD_CLICKED",
 };
 
 // Custom Input for DatePicker to support floating labels
@@ -126,7 +126,7 @@ function ManualTransactionEntry({ profileId, paymentSources, onTransactionAdded 
 
                 if (newRecords.length > 0) {
                     setTransactionRecords(newRecords);
-                    logActivity(ActivityType.TRANSACTION_BULK_UPLOADED, profileId);
+                    logActivity(ActivityType.TRANSACTION_BULK_UPLOAD_CLICKED, profileId);
                 }
             },
             error: (error) => {
