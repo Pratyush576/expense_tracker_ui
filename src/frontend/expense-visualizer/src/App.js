@@ -28,6 +28,19 @@ import MembershipBanner from './components/MembershipBanner';
 import SubscriptionModal from './components/SubscriptionModal';
 import AdminPanel from './components/AdminPanel';
 
+const ActivityType = {
+    TAB_HOME_CLICKED: "TAB_HOME_CLICKED",
+    TAB_PROFILE_DASHBOARD_CLICKED: "TAB_PROFILE_DASHBOARD_CLICKED",
+    TAB_RECORD_TRANSACTION_CLICKED: "TAB_RECORD_TRANSACTION_CLICKED",
+    TAB_RECORD_ASSET_CLICKED: "TAB_RECORD_ASSET_CLICKED",
+    TAB_RULES_CLICKED: "TAB_RULES_CLICKED",
+    TAB_SETTINGS_CLICKED: "TAB_SETTINGS_CLICKED",
+    SUBTAB_OVERVIEW_CLICKED: "SUBTAB_OVERVIEW_CLICKED",
+    SUBTAB_SUBCATEGORY_TRENDS_CLICKED: "SUBTAB_SUBCATEGORY_TRENDS_CLICKED",
+    SUBTAB_TRANSACTION_DETAILS_CLICKED: "SUBTAB_TRANSACTION_DETAILS_CLICKED",
+    SUBTAB_BUDGET_CLICKED: "SUBTAB_BUDGET_CLICKED",
+};
+
 // Setup axios interceptor
 axios.interceptors.request.use(config => {
     const user = authService.getCurrentUser();
@@ -85,6 +98,19 @@ function MainApp({ currentUser, onSubscribe }) {
     const navigate = useNavigate();
 
     const API_BASE_URL = 'http://localhost:8000';
+
+    const logActivity = async (activityType, details = {}, profileId = null) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_BASE_URL}/api/log_activity`, { activity_type: activityType, profile_id: profileId }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+        } catch (error) {
+            console.error("Error logging activity:", error);
+        }
+    };
 
     const handleLogout = () => {
         authService.logout();
@@ -390,6 +416,34 @@ function MainApp({ currentUser, onSubscribe }) {
         setKey('profileDashboard'); // Switch to the profile dashboard tab
     };
 
+    const handleTabSelect = (k) => {
+        setKey(k);
+        let activityType;
+        switch (k) {
+            case 'home':
+                activityType = ActivityType.TAB_HOME_CLICKED;
+                break;
+            case 'profileDashboard':
+                activityType = ActivityType.TAB_PROFILE_DASHBOARD_CLICKED;
+                break;
+            case 'manualEntry':
+                activityType = ActivityType.TAB_RECORD_TRANSACTION_CLICKED;
+                break;
+            case 'recordAsset':
+                activityType = ActivityType.TAB_RECORD_ASSET_CLICKED;
+                break;
+            case 'rules':
+                activityType = ActivityType.TAB_RULES_CLICKED;
+                break;
+            case 'settings':
+                activityType = ActivityType.TAB_SETTINGS_CLICKED;
+                break;
+            default:
+                activityType = ActivityType.TAB_CLICKED; // Fallback
+        }
+        logActivity(activityType, {}, activeProfileId);
+    };
+
     return (
         <div className="container-fluid">
             <Row>
@@ -409,7 +463,7 @@ function MainApp({ currentUser, onSubscribe }) {
                     {currentUser && !currentUser.is_premium && (
                         <MembershipBanner onUpgradeClick={() => setShowSubscribeModal(true)} />
                     )}
-                    <Tabs activeKey={key} onSelect={(k) => setKey(k)} className="mb-3">
+                    <Tabs activeKey={key} onSelect={handleTabSelect} className="mb-3">
                         <Tab eventKey="home" title="Home">
                             <HomePage onProfileSelect={handleProfileSelect} setShowCreateProfileModalFromHome={setShowCreateProfileModalFromHome} />
                         </Tab>
@@ -443,7 +497,27 @@ function MainApp({ currentUser, onSubscribe }) {
                                                 </div>
                                             </div>
                                             {activeProfileType === "EXPENSE_MANAGER" && (
-                                                <Tabs activeKey={dashboardSubTabKey} onSelect={(k) => setDashboardSubTabKey(k)} className="mb-3">
+                                                <Tabs activeKey={dashboardSubTabKey} onSelect={(k) => {
+                                                    setDashboardSubTabKey(k);
+                                                    let subTabActivityType;
+                                                    switch (k) {
+                                                        case 'overview':
+                                                            subTabActivityType = ActivityType.SUBTAB_OVERVIEW_CLICKED;
+                                                            break;
+                                                        case 'subcategoryTrends':
+                                                            subTabActivityType = ActivityType.SUBTAB_SUBCATEGORY_TRENDS_CLICKED;
+                                                            break;
+                                                        case 'transactionDetails':
+                                                            subTabActivityType = ActivityType.SUBTAB_TRANSACTION_DETAILS_CLICKED;
+                                                            break;
+                                                        case 'budget':
+                                                            subTabActivityType = ActivityType.SUBTAB_BUDGET_CLICKED;
+                                                            break;
+                                                        default:
+                                                            subTabActivityType = ActivityType.TAB_CLICKED; // Fallback
+                                                    }
+                                                    logActivity(subTabActivityType, {}, activeProfileId);
+                                                }} className="mb-3">
                                                     <Tab eventKey="overview" title="Overview">
                                                         <div className="row">
                                                             <div className="col-lg-4">

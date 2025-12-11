@@ -9,6 +9,10 @@ import Papa from 'papaparse';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
+const ActivityType = {
+    TRANSACTION_BULK_UPLOADED: "TRANSACTION_BULK_UPLOADED",
+};
+
 // Custom Input for DatePicker to support floating labels
 const CustomDatePickerInput = forwardRef(({ value, onClick, placeholder }, ref) => (
     <Form.Control
@@ -34,6 +38,19 @@ function ManualTransactionEntry({ profileId, paymentSources, onTransactionAdded 
     const [transactionRecords, setTransactionRecords] = useState([emptyTransaction()]);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+
+    const logActivity = async (activityType, profileId = null) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_BASE_URL}/api/log_activity`, { activity_type: activityType, profile_id: profileId }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+        } catch (error) {
+            console.error("Error logging activity:", error);
+        }
+    };
 
     const handleInputChange = (id, e) => {
         const { name, value } = e.target;
@@ -109,6 +126,7 @@ function ManualTransactionEntry({ profileId, paymentSources, onTransactionAdded 
 
                 if (newRecords.length > 0) {
                     setTransactionRecords(newRecords);
+                    logActivity(ActivityType.TRANSACTION_BULK_UPLOADED, profileId);
                 }
             },
             error: (error) => {

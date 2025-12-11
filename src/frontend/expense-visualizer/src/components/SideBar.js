@@ -8,6 +8,8 @@ import ChangePasswordModal from './ChangePasswordModal'; // New: Import ChangePa
 import { getFlagEmoji } from '../utils/currency'; // Import getFlagEmoji
 import axios from 'axios'; // Import axios
 
+const API_BASE_URL = 'http://localhost:8000';
+
 const ActivityType = {
     PROFILE_MANAGEMENT_MODAL_OPENED: "PROFILE_MANAGEMENT_MODAL_OPENED",
     PROFILE_MANAGEMENT_MODAL_CLOSED: "PROFILE_MANAGEMENT_MODAL_CLOSED",
@@ -23,10 +25,10 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
         setShowCreateProfileModal(showCreateProfileModalFromHome);
     }, [showCreateProfileModalFromHome]);
 
-    const logActivity = async (activityType) => {
+    const logActivity = async (activityType, profileId = null) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/log_activity`, { activity_type: activityType }, {
+            await axios.post(`${API_BASE_URL}/api/log_activity`, { activity_type: activityType, profile_id: profileId }, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -38,12 +40,12 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
 
     const handleOpenManageProfilesModal = () => {
         setShowManageProfilesModal(true);
-        logActivity(ActivityType.PROFILE_MANAGEMENT_MODAL_OPENED);
+        logActivity(ActivityType.PROFILE_MANAGEMENT_MODAL_OPENED, activeProfileId);
     };
 
     const handleCloseManageProfilesModal = () => {
         setShowManageProfilesModal(false);
-        logActivity(ActivityType.PROFILE_MANAGEMENT_MODAL_CLOSED);
+        logActivity(ActivityType.PROFILE_MANAGEMENT_MODAL_CLOSED, activeProfileId);
     };
 
     const handleCloseCreateProfileModal = () => {
