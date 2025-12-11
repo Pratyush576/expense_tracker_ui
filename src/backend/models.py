@@ -23,6 +23,11 @@ class ProfileType(str, Enum):
     EXPENSE_MANAGER = "EXPENSE_MANAGER"
     ASSET_MANAGER = "ASSET_MANAGER"
 
+class ActivityType(str, Enum):
+    USER_SIGNED_UP = "USER_SIGNED_UP"
+    USER_LOGGED_IN = "USER_LOGGED_IN"
+    # Add other activity types here as needed
+
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -145,7 +150,7 @@ class Profile(SQLModel, table=True):
 class UserActivity(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    activity_type: str
+    activity_type: ActivityType # Use the new Enum
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     ip_address: Optional[str] = None
 

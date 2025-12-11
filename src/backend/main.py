@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine, get_session
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget, UserActivity, ActivityType
 from backend.processing.rule_engine import RuleEngine
 from backend import auth
 from fastapi.security import OAuth2PasswordRequestForm
@@ -109,7 +109,7 @@ def on_startup():
             session.commit()
             logging.info("Added 'profile_type' column to 'profile' table with default 'EXPENSE_MANAGER'.")
 
-def log_activity(session: Session, user_id: int, activity_type: str, request: Request):
+def log_activity(session: Session, user_id: int, activity_type: ActivityType, request: Request):
     ip_address = request.client.host if request.client else None
     user_activity = UserActivity(user_id=user_id, activity_type=activity_type, ip_address=ip_address)
     session.add(user_activity)
@@ -175,7 +175,7 @@ def create_user(user: UserCreate, request: Request, session: Session = Depends(g
     session.commit()
     session.refresh(db_user) # Get the user ID
 
-    log_activity(session, db_user.id, "User Signed Up", request)
+    log_activity(session, db_user.id, ActivityType.USER_SIGNED_UP, request)
 
     # Create subscription history record
     trial_history = SubscriptionHistory(
@@ -205,7 +205,7 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    log_activity(session, user.id, "User Logged In", request) # Log user login activity
+    log_activity(session, user.id, ActivityType.USER_LOGGED_IN, request) # Log user login activity
     return {"access_token": access_token, "token_type": "bearer"}
 
 
