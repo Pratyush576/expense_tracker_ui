@@ -45,6 +45,7 @@ class User(SQLModel, table=True):
         back_populates="reviewer",
         sa_relationship_kwargs={"foreign_keys": "[Proposal.reviewed_by_id]"}
     )
+    activities: List["UserActivity"] = Relationship(back_populates="user")
 
 
 class SubscriptionHistory(SQLModel, table=True):
@@ -139,6 +140,16 @@ class Profile(SQLModel, table=True):
     payment_sources: List["PaymentSource"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     asset_types: List["AssetType"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # New relationship
     assets: List["Asset"] = Relationship(back_populates="profile", sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # New relationship
+
+
+class UserActivity(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    activity_type: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    ip_address: Optional[str] = None
+
+    user: "User" = Relationship(back_populates="activities")
 
 
 class PaymentSource(SQLModel, table=True):

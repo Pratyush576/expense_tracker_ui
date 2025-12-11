@@ -109,6 +109,13 @@ def on_startup():
             session.commit()
             logging.info("Added 'profile_type' column to 'profile' table with default 'EXPENSE_MANAGER'.")
 
+def log_activity(session: Session, user_id: int, activity_type: str, request: Request):
+    ip_address = request.client.host if request.client else None
+    user_activity = UserActivity(user_id=user_id, activity_type=activity_type, ip_address=ip_address)
+    session.add(user_activity)
+    session.commit()
+    session.refresh(user_activity)
+    logging.info(f"User activity logged: User ID {user_id}, Type: {activity_type}, IP: {ip_address}")
 
 # Pydantic models for user authentication
 class UserCreate(BaseModel):
@@ -143,7 +150,7 @@ class Token(BaseModel):
 
 
 @app.post("/api/users/signup", response_model=User)
-def create_user(user: UserCreate, session: Session = Depends(get_session)):
+def create_user(user: UserCreate, request: Request, session: Session = Depends(get_session)):
     db_user = auth.get_user(session, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -168,6 +175,8 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(db_user) # Get the user ID
 
+    log_activity(session, db_user.id, "User Signed Up", request)
+
     # Create subscription history record
     trial_history = SubscriptionHistory(
         user_id=db_user.id,
@@ -184,7 +193,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
 
 
 @app.post("/api/users/login", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
     user = auth.get_user(session, email=form_data.username)
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -196,6 +205,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), ses
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    log_activity(session, user.id, "User Logged In", request) # Log user login activity
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -1615,6 +1625,19 @@ def get_all_users(
             role=user.role
         ) for user in users
     ]
+
+@app.get("/api/admin/activity/recent", response_model=List[UserActivity])
+def get_recent_activities(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+    limit: int = 10
+):
+    activities = session.exec(
+        select(UserActivity)
+        .order_by(UserActivity.timestamp.desc())
+        .limit(limit)
+    ).all()
+    return activities
 
 # --- Pricing Endpoints ---
 
