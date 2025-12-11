@@ -143,7 +143,7 @@ class RuleEngine:
         The first rule that matches determines the category and subcategory.
         If no rules match, it returns ("UNCATEGORIZED", None).
         """
-        logging.debug(f"Categorizing transaction: {transaction}")
+        logging.info(f"Categorizing transaction: {transaction}")
         for rule in self.rules:
             logging.debug(f"Evaluating rule: {rule}")
             logical_operator = rule.get("logical_operator", "AND")
@@ -164,10 +164,12 @@ class RuleEngine:
             if result:
                 category = rule.get("category", "UNCATEGORIZED")
                 subcategory = rule.get("subcategory")
-                logging.info(f"Transaction '{transaction['description']}' categorized as: {category}:{subcategory}")
+                transaction_description = transaction.get('description', 'N/A')
+                logging.info(f"Transaction '{transaction_description}' categorized as: {category}:{subcategory}")
                 return category, subcategory
         
-        logging.info(f"Transaction '{transaction['description']}' not categorized.")
+        transaction_description = transaction.get('description', 'N/A')
+        logging.info(f"Transaction '{transaction_description}' not categorized.")
         return "UNCATEGORIZED", None
 
     def apply_rules_to_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:

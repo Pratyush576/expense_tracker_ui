@@ -6,6 +6,12 @@ import ManageProfilesModal from './ManageProfilesModal'; // Import ManageProfile
 import UserProfileEditModal from './UserProfileEditModal'; // New: Import UserProfileEditModal
 import ChangePasswordModal from './ChangePasswordModal'; // New: Import ChangePasswordModal
 import { getFlagEmoji } from '../utils/currency'; // Import getFlagEmoji
+import axios from 'axios'; // Import axios
+
+const ActivityType = {
+    PROFILE_MANAGEMENT_MODAL_OPENED: "PROFILE_MANAGEMENT_MODAL_OPENED",
+    PROFILE_MANAGEMENT_MODAL_CLOSED: "PROFILE_MANAGEMENT_MODAL_CLOSED",
+};
 
 const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreateProfile, handleUpdateProfile, handleDeleteProfile, onProfileVisibilityChange, showCreateProfileModalFromHome, setShowCreateProfileModalFromHome }) => {
     const [showCreateProfileModal, setShowCreateProfileModal] = useState(showCreateProfileModalFromHome);
@@ -16,6 +22,29 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
     useEffect(() => {
         setShowCreateProfileModal(showCreateProfileModalFromHome);
     }, [showCreateProfileModalFromHome]);
+
+    const logActivity = async (activityType) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/log_activity`, { activity_type: activityType }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+        } catch (error) {
+            console.error("Error logging activity:", error);
+        }
+    };
+
+    const handleOpenManageProfilesModal = () => {
+        setShowManageProfilesModal(true);
+        logActivity(ActivityType.PROFILE_MANAGEMENT_MODAL_OPENED);
+    };
+
+    const handleCloseManageProfilesModal = () => {
+        setShowManageProfilesModal(false);
+        logActivity(ActivityType.PROFILE_MANAGEMENT_MODAL_CLOSED);
+    };
 
     const handleCloseCreateProfileModal = () => {
         setShowCreateProfileModal(false);
@@ -82,7 +111,7 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => setShowManageProfilesModal(true)}><Gear className="me-2" />Manage Profiles</Dropdown.Item>
+                        <Dropdown.Item onClick={handleOpenManageProfilesModal}><Gear className="me-2" />Manage Profiles</Dropdown.Item>
                         <Dropdown.Item onClick={() => setShowUserProfileEditModal(true)}><Pencil className="me-2" />Edit Profile</Dropdown.Item>
                         <Dropdown.Item onClick={() => setShowChangePasswordModal(true)}><Key className="me-2" />Change Password</Dropdown.Item>
                     </Dropdown.Menu>
@@ -97,7 +126,7 @@ const SideBar = ({ profiles, activeProfileId, setActiveProfileId, handleCreatePr
 
             <ManageProfilesModal
                 show={showManageProfilesModal}
-                handleClose={() => setShowManageProfilesModal(false)}
+                handleClose={handleCloseManageProfilesModal}
                 profiles={profiles} // Pass profiles to ManageProfilesModal
                 onProfileVisibilityChange={onProfileVisibilityChange}
                 handleUpdateProfile={handleUpdateProfile}
