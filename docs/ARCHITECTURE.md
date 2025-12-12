@@ -119,6 +119,16 @@ graph TD
     SettingsTab --> SettingsComponent[Settings.js];
     SettingsTab --> AssetTypeManager[AssetTypeManager.js];
     SettingsTab --> PaymentSourceManager[PaymentSourceManager.js];
+
+    AdminPanel --> AdminDashboardHome[AdminDashboardHome.js];
+    AdminPanel --> PriceManagement[PriceManagement.js];
+    AdminPanel --> DiscountManagement[DiscountManagement.js];
+    AdminPanel --> ProposalQueue[ProposalQueue.js];
+    AdminPanel --> LogDashboard[LogDashboard.js];
+    AdminPanel --> TrialOfferManagement[TrialOfferManagement.js];
+    AdminPanel --> WhitelistedUserRoleManagement[WhitelistedUserRoleManagement.js];
+    AdminPanel --> MyProposals[MyProposals.js];
+    AdminPanel --> ProposalForm[ProposalForm.js];
 ```
 
 ### 3.3. Main Components
@@ -126,15 +136,16 @@ graph TD
 -   **App.js**: The root component of the application. It sets up the routing structure (distinguishing between public, private, and admin routes) and contains the `MainApp` component, which manages the main state (profiles, transactions, settings) and the layout for authenticated users. It also handles dynamic tab rendering and feature gating based on user's premium status and active profile type. `axios` interceptors are configured here to automatically attach JWT for authentication and handle 401 errors.
 -   **Login.js**: A public component that provides a form for users to log in.
 -   **Signup.js**: A public component that provides a form for new users to register.
--   **AdminPanel.js**: A private component for users with the 'ADMIN' or 'MANAGER' role. It provides a navigation structure and routes to various admin sub-components.
+-   **AdminPanel.js**: A private component for users with the 'ADMIN' or 'MANAGER' role. It provides a navigation structure and routes to various admin sub-components, including `AdminDashboardHome`, `PriceManagement`, `DiscountManagement`, `ProposalQueue`, `LogDashboard`, `TrialOfferManagement`, `WhitelistedUserRoleManagement`, `MyProposals`, and `ProposalForm`.
 -   **AdminDashboardHome.js**: Displays an overview of key metrics for administrators, including total users, active subscriptions (with breakdown), pending proposals, recent activities, user sign-ups by day, new subscriptions by day, expired subscriptions by day, and total revenue by day. Utilizes `recharts` for data visualization.
--   **UserManagement.js**: Allows administrators to view and manage user accounts, including assigning roles.
 -   **PriceManagement.js**: Enables administrators to manage geographic pricing for subscriptions.
 -   **DiscountManagement.js**: Allows administrators to create and manage discount codes.
 -   **ProposalForm.js**: A component for managers to create new proposals for admin review.
 -   **MyProposals.js**: Displays a list of proposals submitted by the current manager.
 -   **ProposalQueue.js**: Shows a queue of pending proposals for administrators to review and approve/reject.
 -   **LogDashboard.js**: Provides an interface for viewing and filtering user activity logs.
+-   **TrialOfferManagement.js**: Allows administrators to configure the default free trial duration for new user sign-ups.
+-   **WhitelistedUserRoleManagement.js**: Manages whitelisted users, displaying their details (First Name, Last Name, Email, Phone, Role) and allowing Admins to add/remove users from the whitelist and assign roles. Role changes require confirmation, and Admin/Manager users cannot be removed from the whitelist.
 -   **authService.js**: A utility module that encapsulates the logic for handling authentication-related API calls (login, signup, logout) and managing the user's authentication token in local storage.
 -   **SideBar.js**: Displays the list of user profiles, grouped by profile type (e.g., Expense Manager, Asset Manager) with corresponding icons. It allows users to create, edit, and delete profiles, and launches `UserProfileEditModal` and `ChangePasswordModal` for user account management. Features dynamic styling for profile types and compact design with icon-only buttons.
 -   **HomePage.js**: The landing page of the application, providing an entry point for profile selection or creation.
@@ -255,12 +266,14 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 -   **`POST /api/admin/users/{user_id}/assign-role`**: Assign a role to a user.
 -   **`GET /api/admin/users`**: Get a list of all users.
 -   **`GET /api/admin/users/count`**: Get the total count of registered users.
--   **`GET /api/admin/subscriptions/count`**: Get the count and breakdown of active subscriptions by type.
+-   **`GET /api/admin/subscriptions/count`**: Get the count and breakdown of active subscriptions.
 -   **`GET /api/admin/proposals/count`**: Get the count of pending proposals.
 -   **`GET /api/admin/user-signups-by-day`**: Get user signup data grouped by day for a specified period.
 -   **`GET /api/admin/new-subscriptions-by-day`**: Get new subscription data grouped by day and type for a specified period.
 -   **`GET /api/admin/expired-subscriptions-by-day`**: Get expired subscription data grouped by day and type for a specified period.
 -   **`GET /api/admin/total-revenue-by-day`**: Get total revenue data grouped by day for a specified period.
+-   **`GET /api/admin/settings/{key}`**: Retrieve a specific admin setting (e.g., `DEFAULT_TRIAL_DAYS`).
+-   **`PUT /api/admin/settings/{key}`**: Update a specific admin setting.
 -   **`POST /api/admin/pricing`**: Create a new geographic price.
 -   **`GET /api/admin/pricing`**: Get all geographic prices.
 -   **`PUT /api/admin/pricing/{price_id}`**: Update a geographic price.
@@ -270,6 +283,9 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 -   **`POST /api/admin/proposals/{proposal_id}/approve`**: Approve a proposal.
 -   **`POST /api/admin/proposals/{proposal_id}/reject`**: Reject a proposal.
 -   **`GET /api/admin/proposals`**: Get all proposals (for admin review).
+-   **`POST /api/admin/whitelist/add`**: Add a user to the whitelist.
+-   **`DELETE /api/admin/whitelist/remove/{user_id}`**: Remove a user from the whitelist.
+-   **`GET /api/admin/whitelist`**: Retrieve all whitelisted users, including their details (First Name, Last Name, Email, Phone, Role) using the `WhitelistedUserResponse` model.
 
 #### Manager
 -   **`POST /api/manager/proposals`**: Create a new proposal.
@@ -310,6 +326,7 @@ erDiagram
         string user_first_name
         string user_last_name
         string mobile_phone_number
+        string country_code "ISO 3166-1 alpha-2 country code derived from IP address"
         datetime subscription_expiry_date
         string role
         datetime account_creation_time
@@ -455,6 +472,18 @@ erDiagram
         string activity_type "Extensive enum covering various user and admin actions"
         datetime timestamp
         string ip_address
+        string country_code "ISO 3166-1 alpha-2 country code derived from IP address"
+    }
+
+    ADMIN_SETTING {
+        string key PK "Unique key for the setting"
+        string value "Value of the setting"
+    }
+
+    WHITELISTED_USER {
+        int id PK
+        int user_id FK "Foreign key to the User table"
+        datetime added_at "Timestamp when the user was whitelisted"
     }
 ```
 
@@ -465,7 +494,8 @@ erDiagram
 -   **Authentication (`auth.py`)**: This module handles all authentication-related logic. It uses `passlib` with the `bcrypt` algorithm for password hashing and `python-jose` for creating and verifying JWT tokens. It provides functions to create users, verify passwords, and get the current authenticated user from a token.
 -   **Rule Engine (`rule_engine.py`)**: This component is responsible for categorizing transactions based on a set of user-defined rules. It supports various fields (e.g., "Date", "Payment Source", "Description"), rule types (e.g., "contains", "equal", "range"), and logical operators ("AND", "OR"). It also handles backward compatibility for older rule formats. When new transactions are fetched, the rule engine applies the rules to automatically assign a category and subcategory to each transaction.
 -   **Data Aggregation**: The backend performs various data aggregations on the fly to provide data for the frontend charts. For example, it calculates monthly expenses per category, total asset values, and budget vs. expense comparisons.
--   **Activity Logging**: The system logs various user activities for analytics and auditing purposes. The `log_activity` function is used throughout the backend to record events such as user login, profile creation, transaction recording, asset management, and administrative actions. The `ActivityType` enum provides a comprehensive list of trackable events. The `/api/log_activity` endpoint allows the frontend to log generic user activities.
+-   **Activity Logging**: The system logs various user activities for analytics and auditing purposes. The `log_activity` function is used throughout the backend to record events such as user login, profile creation, transaction recording, asset management, and administrative actions. The `ActivityType` enum provides a comprehensive list of trackable events. The `/api/log_activity` endpoint allows the frontend to log generic user activities. User's `country_code` is also captured during activity logging using the `_get_country_code_from_ip` helper function.
+-   **Geolocation (`_get_country_code_from_ip`)**: A helper function used to determine a user's country code based on their IP address. In a production environment, this would integrate with a robust GeoIP database or API service.
 
 ## 5. Data Migration
 
