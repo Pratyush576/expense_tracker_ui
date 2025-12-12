@@ -2346,6 +2346,7 @@ class WhitelistedUserResponse(BaseModel):
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None
     mobile_phone_number: Optional[str] = None
+    role: Role # Add role field
 
 @app.post("/api/admin/whitelist/add", response_model=WhitelistedUser)
 def add_user_to_whitelist(
@@ -2404,7 +2405,8 @@ def get_whitelisted_users(
             email=user.email,
             user_first_name=user.user_first_name,
             user_last_name=user.user_last_name,
-            mobile_phone_number=user.mobile_phone_number
+            mobile_phone_number=user.mobile_phone_number,
+            role=user.role # Include role
         ))
     return whitelisted_users_with_details
 

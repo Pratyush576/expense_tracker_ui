@@ -136,6 +136,7 @@ const WhitelistManagement = () => {
                                 <th>Last Name</th>
                                 <th>Email</th>
                                 <th>Phone Number</th>
+                                <th>Role</th>
                                 <th>Whitelisted Since</th>
                                 <th>Actions</th>
                             </tr>
@@ -148,6 +149,7 @@ const WhitelistManagement = () => {
                                     <td>{user.user_last_name || 'N/A'}</td>
                                     <td>{user.email}</td>
                                     <td>{user.mobile_phone_number || 'N/A'}</td>
+                                    <td>{user.role}</td>
                                     <td>{new Date(user.added_at).toLocaleString()}</td>
                                     <td>
                                         <Button 
