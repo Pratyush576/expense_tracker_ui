@@ -1796,6 +1796,92 @@ def get_user_signups_by_day(
     return [{"date": date, "count": count} for date, count in signups_by_day.items()]
 
 
+@app.get("/api/admin/user-signups-by-day")
+def get_user_signups_by_day(
+    days: int = 7,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+    
+    signups = session.exec(
+        select(UserActivity).where(
+            UserActivity.activity_type == ActivityType.USER_SIGNED_UP,
+            UserActivity.timestamp >= start_date,
+            UserActivity.timestamp <= end_date
+        )
+    ).all()
+    
+    signups_by_day = {}
+    for i in range(days):
+        date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        signups_by_day[date] = 0
+        
+    for signup in signups:
+        date_str = signup.timestamp.strftime("%Y-%m-%d")
+        if date_str in signups_by_day:
+            signups_by_day[date_str] += 1
+            
+    return [{"date": date, "count": count} for date, count in signups_by_day.items()]
+
+@app.get("/api/admin/new-subscriptions-by-day")
+def get_new_subscriptions_by_day(
+    days: int = 7,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    new_subscriptions = session.exec(
+        select(SubscriptionHistory).where(
+            SubscriptionHistory.purchase_date >= start_date,
+            SubscriptionHistory.purchase_date <= end_date
+        )
+    ).all()
+
+    subscriptions_by_day = {}
+    for i in range(days):
+        date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        subscriptions_by_day[date] = 0
+    
+    for sub in new_subscriptions:
+        date_str = sub.purchase_date.strftime("%Y-%m-%d")
+        if date_str in subscriptions_by_day:
+            subscriptions_by_day[date_str] += 1
+            
+    return [{"date": date, "count": count} for date, count in subscriptions_by_day.items()]
+
+@app.get("/api/admin/expired-subscriptions-by-day")
+def get_expired_subscriptions_by_day(
+    days: int = 7,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    expired_subscriptions = session.exec(
+        select(SubscriptionHistory).where(
+            SubscriptionHistory.end_date >= start_date,
+            SubscriptionHistory.end_date <= end_date
+        )
+    ).all()
+
+    subscriptions_by_day = {}
+    for i in range(days):
+        date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        subscriptions_by_day[date] = 0
+    
+    for sub in expired_subscriptions:
+        date_str = sub.end_date.strftime("%Y-%m-%d")
+        if date_str in subscriptions_by_day:
+            subscriptions_by_day[date_str] += 1
+            
+    return [{"date": date, "count": count} for date, count in subscriptions_by_day.items()]
+
+
 @app.get("/api/admin/activity/recent", response_model=List[UserActivity])
 def get_recent_activities(
     session: Session = Depends(get_session),

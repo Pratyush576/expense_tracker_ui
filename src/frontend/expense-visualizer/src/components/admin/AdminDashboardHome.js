@@ -12,6 +12,8 @@ const AdminDashboardHome = () => {
     const [pendingProposals, setPendingProposals] = useState(0);
     const [recentActivities, setRecentActivities] = useState([]);
     const [userSignups, setUserSignups] = useState([]);
+    const [newSubscriptions, setNewSubscriptions] = useState([]);
+    const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -27,13 +29,17 @@ const AdminDashboardHome = () => {
                     subscriptionsRes,
                     proposalsRes,
                     activitiesRes,
-                    userSignupsRes
+                    userSignupsRes,
+                    newSubscriptionsRes,
+                    expiredSubscriptionsRes
                 ] = await Promise.all([
                     axios.get(`${API_BASE_URL}/api/admin/users/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/subscriptions/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/proposals/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/activity/recent?limit=10`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/admin/user-signups-by-day`, { headers })
+                    axios.get(`${API_BASE_URL}/api/admin/user-signups-by-day`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/admin/new-subscriptions-by-day`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/admin/expired-subscriptions-by-day`, { headers })
                 ]);
 
                 setTotalUsers(usersCountRes.data.count);
@@ -41,6 +47,8 @@ const AdminDashboardHome = () => {
                 setPendingProposals(proposalsRes.data.count);
                 setRecentActivities(activitiesRes.data);
                 setUserSignups(userSignupsRes.data);
+                setNewSubscriptions(newSubscriptionsRes.data);
+                setExpiredSubscriptions(expiredSubscriptionsRes.data);
 
             } catch (err) {
                 console.error("Error fetching admin dashboard data:", err);
@@ -128,6 +136,47 @@ const AdminDashboardHome = () => {
                                     <Tooltip />
                                     <Legend />
                                     <Bar dataKey="count" fill="#8884d8" name="Sign-ups" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row>
+                <Col md={6}>
+                    <Card className="shadow-sm mb-4">
+                        <Card.Header className="bg-light">
+                            New Subscriptions (Last 7 Days)
+                        </Card.Header>
+                        <Card.Body>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={newSubscriptions}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#4CAF50" name="New Subscriptions" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={6}>
+                    <Card className="shadow-sm mb-4">
+                        <Card.Header className="bg-light">
+                            Expired Subscriptions (Last 7 Days)
+                        </Card.Header>
+                        <Card.Body>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={expiredSubscriptions}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#F44336" name="Expired Subscriptions" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>
