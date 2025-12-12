@@ -252,7 +252,7 @@ def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
 
 
 @app.put("/api/users/me", response_model=UserResponse)
-def update_users_me(user_update: UserUpdate, request: Request, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
+def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session), request: Request = Depends()):
     if user_update.user_first_name is not None:
         current_user.user_first_name = user_update.user_first_name
     if user_update.user_last_name is not None:
@@ -264,7 +264,7 @@ def update_users_me(user_update: UserUpdate, request: Request, current_user: Use
     session.commit()
     session.refresh(current_user)
     
-    log_activity(session, current_user.id, ActivityType.USER_PROFILE_UPDATED, request)
+    log_activity(session, current_user.id, ActivityType.USER_PROFILE_UPDATED, request, profile_id=None)
 
     is_premium = False
     if current_user.subscription_expiry_date:
@@ -1741,6 +1741,30 @@ def get_all_users(
             role=user.role
         ) for user in users
     ]
+
+@app.get("/api/admin/users/count")
+def get_users_count(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    user_count = session.exec(select(User)).all()
+    return {"count": len(user_count)}
+
+@app.get("/api/admin/subscriptions/count")
+def get_subscriptions_count(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    subscription_count = session.exec(select(SubscriptionHistory).where(SubscriptionHistory.end_date > datetime.now())).all()
+    return {"count": len(subscription_count)}
+
+@app.get("/api/admin/proposals/count")
+def get_proposals_count(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    proposal_count = session.exec(select(Proposal).where(Proposal.status == "pending")).all()
+    return {"count": len(proposal_count)}
 
 @app.get("/api/admin/activity/recent", response_model=List[UserActivity])
 def get_recent_activities(
