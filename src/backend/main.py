@@ -1841,17 +1841,28 @@ def get_new_subscriptions_by_day(
         )
     ).all()
 
-    subscriptions_by_day = {}
+    # Get all unique subscription types
+    all_subscription_types = list(set([sub.subscription_type for sub in new_subscriptions]))
+    if not all_subscription_types:
+        all_subscription_types = ["monthly", "yearly", "trial"] # Default types if no subscriptions exist
+
+    subscriptions_by_day_and_type = {}
     for i in range(days):
         date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
-        subscriptions_by_day[date] = 0
-    
+        subscriptions_by_day_and_type[date] = {st: 0 for st in all_subscription_types}
+        
     for sub in new_subscriptions:
         date_str = sub.purchase_date.strftime("%Y-%m-%d")
-        if date_str in subscriptions_by_day:
-            subscriptions_by_day[date_str] += 1
+        if date_str in subscriptions_by_day_and_type and sub.subscription_type in subscriptions_by_day_and_type[date_str]:
+            subscriptions_by_day_and_type[date_str][sub.subscription_type] += 1
             
-    return [{"date": date, "count": count} for date, count in subscriptions_by_day.items()]
+    result = []
+    for date, types_count in subscriptions_by_day_and_type.items():
+        entry = {"date": date}
+        entry.update(types_count)
+        result.append(entry)
+            
+    return result
 
 @app.get("/api/admin/expired-subscriptions-by-day")
 def get_expired_subscriptions_by_day(
@@ -1869,17 +1880,28 @@ def get_expired_subscriptions_by_day(
         )
     ).all()
 
-    subscriptions_by_day = {}
+    # Get all unique subscription types
+    all_subscription_types = list(set([sub.subscription_type for sub in expired_subscriptions]))
+    if not all_subscription_types:
+        all_subscription_types = ["monthly", "yearly", "trial"] # Default types if no subscriptions exist
+
+    subscriptions_by_day_and_type = {}
     for i in range(days):
         date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
-        subscriptions_by_day[date] = 0
+        subscriptions_by_day_and_type[date] = {st: 0 for st in all_subscription_types}
     
     for sub in expired_subscriptions:
         date_str = sub.end_date.strftime("%Y-%m-%d")
-        if date_str in subscriptions_by_day:
-            subscriptions_by_day[date_str] += 1
+        if date_str in subscriptions_by_day_and_type and sub.subscription_type in subscriptions_by_day_and_type[date_str]:
+            subscriptions_by_day_and_type[date_str][sub.subscription_type] += 1
             
-    return [{"date": date, "count": count} for date, count in subscriptions_by_day.items()]
+    result = []
+    for date, types_count in subscriptions_by_day_and_type.items():
+        entry = {"date": date}
+        entry.update(types_count)
+        result.append(entry)
+            
+    return result
 
 
 @app.get("/api/admin/expired-subscriptions-by-day")

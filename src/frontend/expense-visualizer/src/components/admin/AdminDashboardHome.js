@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Spinner, ListGroup, Badge, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill, CurrencyDollar } from 'react-bootstrap-icons';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'; // Changed BarChart, Bar to AreaChart, Area
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+
+const subscriptionTypeColors = {
+    "monthly": "#82ca9d",
+    "yearly": "#8884d8",
+    "trial": "#ffc658",
+};
 
 const AdminDashboardHome = () => {
     const [totalUsers, setTotalUsers] = useState(0);
@@ -78,6 +84,22 @@ const AdminDashboardHome = () => {
     if (error) {
         return <Alert variant="danger">{error}</Alert>;
     }
+
+    // Extract unique subscription types from data for dynamic Area components
+    const getSubscriptionTypes = (data) => {
+        const types = new Set();
+        data.forEach(item => {
+            Object.keys(item).forEach(key => {
+                if (key !== 'date') {
+                    types.add(key);
+                }
+            });
+        });
+        return Array.from(types);
+    };
+
+    const newSubscriptionTypes = getSubscriptionTypes(newSubscriptions);
+    const expiredSubscriptionTypes = getSubscriptionTypes(expiredSubscriptions);
 
     return (
         <div className="admin-dashboard-home">
@@ -180,7 +202,17 @@ const AdminDashboardHome = () => {
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Area type="monotone" dataKey="count" stroke="#4CAF50" fill="#4CAF50" name="New Subscriptions" />
+                                    {newSubscriptionTypes.map(type => (
+                                        <Area
+                                            key={type}
+                                            type="monotone"
+                                            dataKey={type}
+                                            stackId="1"
+                                            stroke={subscriptionTypeColors[type] || "#ccc"}
+                                            fill={subscriptionTypeColors[type] || "#ccc"}
+                                            name={type.charAt(0).toUpperCase() + type.slice(1)}
+                                        />
+                                    ))}
                                 </AreaChart>
                             </ResponsiveContainer>
                         </Card.Body>
@@ -199,7 +231,17 @@ const AdminDashboardHome = () => {
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Area type="monotone" dataKey="count" stroke="#F44336" fill="#F44336" name="Expired Subscriptions" />
+                                    {expiredSubscriptionTypes.map(type => (
+                                        <Area
+                                            key={type}
+                                            type="monotone"
+                                            dataKey={type}
+                                            stackId="1"
+                                            stroke={subscriptionTypeColors[type] || "#ccc"}
+                                            fill={subscriptionTypeColors[type] || "#ccc"}
+                                            name={type.charAt(0).toUpperCase() + type.slice(1)}
+                                        />
+                                    ))}
                                 </AreaChart>
                             </ResponsiveContainer>
                         </Card.Body>
