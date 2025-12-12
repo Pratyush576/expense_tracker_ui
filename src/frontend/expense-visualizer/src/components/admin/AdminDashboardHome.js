@@ -126,7 +126,7 @@ const AdminDashboardHome = () => {
             </Row>
 
             <Row>
-                <Col md={12}>
+                <Col md={6}>
                     <Card className="shadow-sm mb-4">
                         <Card.Header className="bg-light">
                             User Sign-ups (Last 7 Days)
@@ -140,6 +140,25 @@ const AdminDashboardHome = () => {
                                     <Tooltip />
                                     <Legend />
                                     <Bar dataKey="count" fill="#8884d8" name="Sign-ups" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={6}>
+                    <Card className="shadow-sm mb-4">
+                        <Card.Header className="bg-light">
+                            <CurrencyDollar className="me-2" />Total Revenue (Last 7 Days)
+                        </Card.Header>
+                        <Card.Body>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={totalRevenue}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                                    <Legend />
+                                    <Bar dataKey="total_amount" fill="#007bff" name="Total Amount" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>
@@ -181,28 +200,6 @@ const AdminDashboardHome = () => {
                                     <Tooltip />
                                     <Legend />
                                     <Bar dataKey="count" fill="#F44336" name="Expired Subscriptions" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            <Row>
-                <Col md={12}>
-                    <Card className="shadow-sm mb-4">
-                        <Card.Header className="bg-light">
-                            <CurrencyDollar className="me-2" />Total Revenue (Last 7 Days)
-                        </Card.Header>
-                        <Card.Body>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={totalRevenue}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="date" />
-                                    <YAxis />
-                                    <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
-                                    <Legend />
-                                    <Bar dataKey="total_amount" fill="#007bff" name="Total Amount" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>
