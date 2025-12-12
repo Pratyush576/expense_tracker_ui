@@ -1882,6 +1882,64 @@ def get_expired_subscriptions_by_day(
     return [{"date": date, "count": count} for date, count in subscriptions_by_day.items()]
 
 
+@app.get("/api/admin/expired-subscriptions-by-day")
+def get_expired_subscriptions_by_day(
+    days: int = 7,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    expired_subscriptions = session.exec(
+        select(SubscriptionHistory).where(
+            SubscriptionHistory.end_date >= start_date,
+            SubscriptionHistory.end_date <= end_date
+        )
+    ).all()
+
+    subscriptions_by_day = {}
+    for i in range(days):
+        date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        subscriptions_by_day[date] = 0
+    
+    for sub in expired_subscriptions:
+        date_str = sub.end_date.strftime("%Y-%m-%d")
+        if date_str in subscriptions_by_day:
+            subscriptions_by_day[date_str] += 1
+            
+    return [{"date": date, "count": count} for date, count in subscriptions_by_day.items()]
+
+@app.get("/api/admin/total-revenue-by-day")
+def get_total_revenue_by_day(
+    days: int = 7,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    successful_payments = session.exec(
+        select(PaymentTransaction).where(
+            PaymentTransaction.status == "succeeded",
+            PaymentTransaction.transaction_date >= start_date,
+            PaymentTransaction.transaction_date <= end_date
+        )
+    ).all()
+
+    revenue_by_day = {}
+    for i in range(days):
+        date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        revenue_by_day[date] = 0.0
+    
+    for payment in successful_payments:
+        date_str = payment.transaction_date.strftime("%Y-%m-%d")
+        if date_str in revenue_by_day:
+            revenue_by_day[date_str] += payment.amount
+            
+    return [{"date": date, "total_amount": amount} for date, amount in revenue_by_day.items()]
+
+
 @app.get("/api/admin/activity/recent", response_model=List[UserActivity])
 def get_recent_activities(
     session: Session = Depends(get_session),

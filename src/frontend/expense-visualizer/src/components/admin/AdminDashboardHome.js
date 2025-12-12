@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Spinner, ListGroup, Badge, Alert } from 'react-bootstrap';
 import axios from 'axios';
-import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill } from 'react-bootstrap-icons';
+import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill, CurrencyDollar } from 'react-bootstrap-icons'; // Added CurrencyDollar icon
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
@@ -14,6 +14,7 @@ const AdminDashboardHome = () => {
     const [userSignups, setUserSignups] = useState([]);
     const [newSubscriptions, setNewSubscriptions] = useState([]);
     const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
+    const [totalRevenue, setTotalRevenue] = useState([]); // New state for total revenue
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -31,7 +32,8 @@ const AdminDashboardHome = () => {
                     activitiesRes,
                     userSignupsRes,
                     newSubscriptionsRes,
-                    expiredSubscriptionsRes
+                    expiredSubscriptionsRes,
+                    totalRevenueRes // New API call
                 ] = await Promise.all([
                     axios.get(`${API_BASE_URL}/api/admin/users/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/subscriptions/count`, { headers }),
@@ -39,7 +41,8 @@ const AdminDashboardHome = () => {
                     axios.get(`${API_BASE_URL}/api/admin/activity/recent?limit=10`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/user-signups-by-day`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/new-subscriptions-by-day`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/admin/expired-subscriptions-by-day`, { headers })
+                    axios.get(`${API_BASE_URL}/api/admin/expired-subscriptions-by-day`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/admin/total-revenue-by-day`, { headers }) // New API call
                 ]);
 
                 setTotalUsers(usersCountRes.data.count);
@@ -49,6 +52,7 @@ const AdminDashboardHome = () => {
                 setUserSignups(userSignupsRes.data);
                 setNewSubscriptions(newSubscriptionsRes.data);
                 setExpiredSubscriptions(expiredSubscriptionsRes.data);
+                setTotalRevenue(totalRevenueRes.data); // Set total revenue state
 
             } catch (err) {
                 console.error("Error fetching admin dashboard data:", err);
@@ -177,6 +181,28 @@ const AdminDashboardHome = () => {
                                     <Tooltip />
                                     <Legend />
                                     <Bar dataKey="count" fill="#F44336" name="Expired Subscriptions" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row>
+                <Col md={12}>
+                    <Card className="shadow-sm mb-4">
+                        <Card.Header className="bg-light">
+                            <CurrencyDollar className="me-2" />Total Revenue (Last 7 Days)
+                        </Card.Header>
+                        <Card.Body>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={totalRevenue}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                                    <Legend />
+                                    <Bar dataKey="total_amount" fill="#007bff" name="Total Amount" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Card.Body>
