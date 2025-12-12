@@ -452,7 +452,7 @@ function MainApp({ currentUser, onSubscribe }) {
                 </Col>
                 <Col md={11}>
                     <div className="d-flex justify-content-between align-items-center">
-                        <h1 className="my-4">Expense Manager</h1>
+                        <h1 className="my-4">Finance Manager</h1>
                         <div>
                             {currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') && (
                                 <Link to="/admin" className="btn btn-secondary me-2">Admin Panel</Link>
