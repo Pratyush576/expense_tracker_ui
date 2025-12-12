@@ -5,13 +5,17 @@ import { PersonPlusFill, PersonDashFill } from 'react-bootstrap-icons';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
-const WhitelistManagement = () => {
+const WhitelistManagement = ({ currentUser }) => {
     const [whitelistedUsers, setWhitelistedUsers] = useState([]);
     const [newUserId, setNewUserId] = useState('');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState(null);
     const [messageType, setMessageType] = useState(null); // 'success' or 'danger'
+
+    const isAdmin = currentUser?.role === 'ADMIN';
+    const isManager = currentUser?.role === 'MANAGER';
+    const canRemove = isAdmin; // Only Admin can remove users from whitelist
 
     useEffect(() => {
         fetchWhitelistedUsers();
@@ -156,7 +160,7 @@ const WhitelistManagement = () => {
                                             variant="danger" 
                                             size="sm" 
                                             onClick={() => handleRemoveUser(user.user_id)} 
-                                            disabled={submitting}
+                                            disabled={submitting || !canRemove}
                                         >
                                             {submitting ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : <><PersonDashFill className="me-2" />Remove</>}
                                         </Button>

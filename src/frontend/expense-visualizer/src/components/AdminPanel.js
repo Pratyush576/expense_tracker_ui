@@ -31,7 +31,7 @@ const AdminPanel = ({ currentUser }) => {
         isAdmin && <Route key="proposals" path="proposals" element={<ProposalQueue />} />,
         isAdmin && <Route key="logs" path="logs" element={<LogDashboard />} />,
         isAdmin && <Route key="sign-up-offer" path="sign-up-offer" element={<TrialOfferManagement />} />, // New route for trial offer management
-        isAdmin && <Route key="whitelist" path="whitelist" element={<WhitelistManagement />} />, // New route for whitelist management
+        isAdmin && <Route key="whitelist" path="whitelist" element={<WhitelistManagement currentUser={currentUser} />} />, // New route for whitelist management, passing currentUser
         (isAdmin || isManager) && <Route key="my-proposals" path="my-proposals" element={<MyProposals />} />,
         (isAdmin || isManager) && <Route key="new-proposal" path="new-proposal" element={<ProposalForm />} />,
         <Route key="index" index element={<AdminDashboardHome />} />
