@@ -77,6 +77,8 @@ class ActivityType(str, Enum):
     ADMIN_DISCOUNT_UPDATED = "ADMIN_DISCOUNT_UPDATED"
     ADMIN_PROPOSAL_APPROVED = "ADMIN_PROPOSAL_APPROVED"
     ADMIN_PROPOSAL_REJECTED = "ADMIN_PROPOSAL_REJECTED"
+    ADMIN_WHITELIST_ADD = "ADMIN_WHITELIST_ADD"
+    ADMIN_WHITELIST_REMOVE = "ADMIN_WHITELIST_REMOVE"
 
     MANAGER_PROPOSAL_CREATED = "MANAGER_PROPOSAL_CREATED"
     TAB_CLICKED = "TAB_CLICKED"
@@ -117,6 +119,7 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={"foreign_keys": "[Proposal.reviewed_by_id]"}
     )
     activities: List["UserActivity"] = Relationship(back_populates="user")
+    whitelisted_status: Optional["WhitelistedUser"] = Relationship(back_populates="user")
 
 
 class SubscriptionHistory(SQLModel, table=True):
@@ -229,6 +232,13 @@ class UserActivity(SQLModel, table=True):
 class AdminSetting(SQLModel, table=True):
     key: str = Field(primary_key=True, index=True, unique=True)
     value: str
+
+class WhitelistedUser(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True)
+    added_at: datetime = Field(default_factory=datetime.utcnow)
+
+    user: "User" = Relationship(back_populates="whitelisted_status")
 
 
 class PaymentSource(SQLModel, table=True):

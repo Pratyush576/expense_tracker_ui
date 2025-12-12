@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine, get_session
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget, UserActivity, ActivityType, AdminSetting
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget, UserActivity, ActivityType, AdminSetting, WhitelistedUser
 from backend.processing.rule_engine import RuleEngine
 from backend import auth
 from fastapi.security import OAuth2PasswordRequestForm
@@ -155,6 +155,13 @@ def on_startup():
                 session.add(AdminSetting(key="DEFAULT_TRIAL_DAYS", value="30"))
                 session.commit()
                 logging.info("Added default 'DEFAULT_TRIAL_DAYS' setting to 'adminsetting' table.")
+        
+        # Ensure whitelisteduser table is created
+        if "whitelisteduser" not in inspector.get_table_names():
+            # SQLModel will create the table if it doesn't exist during create_db_and_tables()
+            # But if it was added later, we might need a migration.
+            # For now, assume create_db_and_tables() handles it on first run.
+            logging.info("WhitelistedUser table check. Assuming create_db_and_tables() handles creation.")
 
 def log_activity(request: Request, session: Session, user_id: int, activity_type: ActivityType, profile_id: Optional[int] = None):
     ip_address = request.client.host if request.client else None
@@ -287,9 +294,14 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
 
 
 @app.get("/api/users/me", response_model=UserResponse)
-def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
+def read_users_me(current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
     is_premium = False
-    if current_user.subscription_expiry_date:
+    
+    # Check if user is whitelisted
+    whitelisted_user = session.exec(select(WhitelistedUser).where(WhitelistedUser.user_id == current_user.id)).first()
+    if whitelisted_user:
+        is_premium = True
+    elif current_user.subscription_expiry_date:
         is_premium = current_user.subscription_expiry_date > datetime.now()
     
     return UserResponse(
@@ -2320,6 +2332,58 @@ def get_all_proposals(
 ):
     proposals = session.exec(select(Proposal)).all()
     return proposals
+
+# Pydantic model for adding a user to the whitelist
+class WhitelistUserCreate(BaseModel):
+    user_id: int
+
+@app.post("/api/admin/whitelist/add", response_model=WhitelistedUser)
+def add_user_to_whitelist(
+    whitelist_user_data: WhitelistUserCreate,
+    request: Request,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    # Check if user exists
+    user = session.get(User, whitelist_user_data.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if user is already whitelisted
+    existing_whitelist_entry = session.exec(select(WhitelistedUser).where(WhitelistedUser.user_id == whitelist_user_data.user_id)).first()
+    if existing_whitelist_entry:
+        raise HTTPException(status_code=400, detail="User is already whitelisted")
+
+    whitelisted_user = WhitelistedUser(user_id=whitelist_user_data.user_id)
+    session.add(whitelisted_user)
+    session.commit()
+    session.refresh(whitelisted_user)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_WHITELIST_ADD, profile_id=None)
+    return whitelisted_user
+
+@app.delete("/api/admin/whitelist/remove/{user_id}")
+def remove_user_from_whitelist(
+    user_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    whitelisted_user = session.exec(select(WhitelistedUser).where(WhitelistedUser.user_id == user_id)).first()
+    if not whitelisted_user:
+        raise HTTPException(status_code=404, detail="User not found in whitelist")
+
+    session.delete(whitelisted_user)
+    session.commit()
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_WHITELIST_REMOVE, profile_id=None)
+    return {"message": "User removed from whitelist successfully"}
+
+@app.get("/api/admin/whitelist", response_model=List[WhitelistedUser])
+def get_whitelisted_users(
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    whitelisted_users = session.exec(select(WhitelistedUser)).all()
+    return whitelisted_users
 
 @app.get("/api/manager/users/{user_id}", response_model=UserResponse)
 def get_user_by_id_for_manager(
