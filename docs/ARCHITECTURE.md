@@ -48,6 +48,9 @@ The frontend is a single-page application (SPA) built with React. It is responsi
 -   **Chart.js & Recharts**: Libraries for creating interactive charts and data visualizations.
 -   **Axios**: A promise-based HTTP client for making requests to the backend API.
 -   **react-datepicker**: A reusable date picker component for React.
+-   **react-bootstrap-icons**: A library for popular Open Source icons.
+-   **papaparse**: A CSV parser for the browser and Node.js.
+-   **uuid**: For generating unique IDs.
 
 ### 3.2. Component Hierarchy
 
@@ -69,6 +72,11 @@ graph TD
 
     MainApp --> SideBar;
     MainApp --> MainContent;
+    MainApp --> SubscriptionModal;
+
+    SideBar --> CreateProfileModal;
+    SideBar --> EditProfileModal;
+    SideBar --> ManageProfilesModal;
 
     MainContent --> Tabs;
     Tabs --> HomeTab[Home];
@@ -103,18 +111,13 @@ graph TD
     AssetDashboard --> MonthlyAssetComparisonChart;
     AssetDashboard --> SubtypeDistributionChart;
 
-    RecordTransactionTab --> ManualTransactionEntry;
-    RecordAssetTab --> RecordAsset;
+    RecordTransactionTab --> ManualTransactionEntry[ManualTransactionEntry.js];
+    RecordAssetTab --> RecordAsset[RecordAsset.js];
 
     RulesTab --> RulesTabComponent[RulesTab.js];
     SettingsTab --> SettingsComponent[Settings.js];
-    SettingsTab --> AssetTypeManager;
-
-    SideBar --> CreateProfileModal;
-    SideBar --> EditProfileModal;
-    SideBar --> ManageProfilesModal;
-
-    MainApp --> SubscriptionModal;
+    SettingsTab --> AssetTypeManager[AssetTypeManager.js];
+    SettingsTab --> PaymentSourceManager[PaymentSourceManager.js];
 ```
 
 ### 3.3. Main Components
@@ -122,16 +125,27 @@ graph TD
 -   **App.js**: The root component of the application. It sets up the routing structure (distinguishing between public, private, and admin routes) and contains the `MainApp` component, which manages the main state (profiles, transactions, settings) and the layout for authenticated users.
 -   **Login.js**: A public component that provides a form for users to log in.
 -   **Signup.js**: A public component that provides a form for new users to register.
--   **AdminPanel.js**: A private component for users with the 'ADMIN' or 'MANAGER' role. It provides a dashboard for managing users, pricing, discounts, and proposals.
+-   **AdminPanel.js**: A private component for users with the 'ADMIN' or 'MANAGER' role. It provides a navigation structure and routes to various admin sub-components.
+-   **AdminDashboardHome.js**: Displays an overview of key metrics for administrators, including user sign-ups, active subscriptions, pending proposals, and recent activities.
+-   **UserManagement.js**: Allows administrators to view and manage user accounts, including assigning roles.
+-   **PriceManagement.js**: Enables administrators to manage geographic pricing for subscriptions.
+-   **DiscountManagement.js**: Allows administrators to create and manage discount codes.
+-   **ProposalForm.js**: A component for managers to create new proposals for admin review.
+-   **MyProposals.js**: Displays a list of proposals submitted by the current manager.
+-   **ProposalQueue.js**: Shows a queue of pending proposals for administrators to review and approve/reject.
+-   **LogDashboard.js**: Provides an interface for viewing and filtering user activity logs.
 -   **authService.js**: A utility module that encapsulates the logic for handling authentication-related API calls (login, signup, logout) and managing the user's authentication token in local storage.
 -   **SideBar.js**: Displays the list of user profiles and allows users to create, edit, and delete profiles.
--   **HomePage.js**: The landing page of the application.
+-   **HomePage.js**: The landing page of the application, providing an entry point for profile selection or creation.
 -   **AssetDashboard.js**: The main dashboard for the "Asset Manager" profile type. It displays a summary of assets and includes charts for visualizing asset data.
 -   **ManualTransactionEntry.js**: A form for manually adding new transactions.
 -   **RecordAsset.js**: A form for recording new assets.
 -   **ExpenseTable.js**: Displays a table of transactions with filtering and sorting capabilities.
--   **Settings.js**: Allows users to manage categories, subcategories, and payment sources.
+-   **Settings.js**: Allows users to manage categories, subcategories, and payment sources for Expense Manager profiles.
+-   **AssetTypeManager.js**: Used within the Settings tab for Asset Manager profiles to manage asset types and their subtypes.
+-   **PaymentSourceManager.js**: Used within the Settings tab for Expense Manager profiles to manage payment sources.
 -   **RulesTab.js**: Provides an interface for creating and managing transaction categorization rules.
+-   **MembershipBanner.js**: A banner displayed to non-premium users, prompting them to subscribe.
 -   **SubscriptionModal.js**: A modal window that allows users to subscribe to a premium plan.
 -   **Chart Components**: Various components for data visualization, such as `PaymentSourcePieChart`, `MonthlyStackedBarChart`, `CategoryCostChart`, etc.
 
@@ -176,6 +190,7 @@ The backend is a Python application built with the FastAPI framework. It provide
 -   **python-dotenv**: A library for managing environment variables.
 -   **passlib**: A library for password hashing and verification.
 -   **python-jose**: A library for encoding and decoding JSON Web Tokens (JWT).
+-   **SQLAlchemy**: Used for advanced database features like `UniqueConstraint`.
 
 ### 4.2. API Endpoints
 
@@ -231,12 +246,19 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 
 #### Activity Logging
 -   **`POST /api/log_activity`**: Log a user activity.
+-   **`GET /api/admin/activity/recent`**: Get recent user activities.
+-   **`GET /api/admin/activity/logs`**: Get user activity logs with filtering and grouping.
 
 #### Admin
 -   **`POST /api/admin/users/{user_id}/assign-role`**: Assign a role to a user.
 -   **`GET /api/admin/users`**: Get a list of all users.
--   **`GET /api/admin/activity/recent`**: Get recent user activities.
--   **`GET /api/admin/activity/logs`**: Get user activity logs with filtering and grouping.
+-   **`GET /api/admin/users/count`**: Get the total count of registered users.
+-   **`GET /api/admin/subscriptions/count`**: Get the count and breakdown of active subscriptions.
+-   **`GET /api/admin/proposals/count`**: Get the count of pending proposals.
+-   **`GET /api/admin/user-signups-by-day`**: Get user signup data grouped by day.
+-   **`GET /api/admin/new-subscriptions-by-day`**: Get new subscription data grouped by day and type.
+-   **`GET /api/admin/expired-subscriptions-by-day`**: Get expired subscription data grouped by day and type.
+-   **`GET /api/admin/total-revenue-by-day`**: Get total revenue data grouped by day.
 -   **`POST /api/admin/pricing`**: Create a new geographic price.
 -   **`GET /api/admin/pricing`**: Get all geographic prices.
 -   **`PUT /api/admin/pricing/{price_id}`**: Update a geographic price.
@@ -245,10 +267,12 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 -   **`PUT /api/admin/discounts/{discount_id}`**: Update a discount.
 -   **`POST /api/admin/proposals/{proposal_id}/approve`**: Approve a proposal.
 -   **`POST /api/admin/proposals/{proposal_id}/reject`**: Reject a proposal.
+-   **`GET /api/admin/proposals`**: Get all proposals (for admin review).
 
 #### Manager
 -   **`POST /api/manager/proposals`**: Create a new proposal.
 -   **`GET /api/manager/proposals`**: Get all proposals created by the manager.
+-   **`GET /api/manager/users/{user_id}`**: Get details of a specific user (accessible to managers).
 
 #### Public Pricing and Discounts
 -   **`GET /api/pricing`**: Get all public geographic prices.
@@ -342,6 +366,7 @@ erDiagram
         string payment_type
         string source_name
         string note
+        UNIQUE(profile_id, source_name)
     }
 
     ASSET_TYPE {
@@ -349,6 +374,8 @@ erDiagram
         string name
         string subtypes
         int profile_id FK
+        UNIQUE(profile_id, name)
+        UNIQUE(profile_id, name, subtypes)
     }
 
     ASSET {
@@ -427,7 +454,6 @@ erDiagram
         datetime timestamp
         string ip_address
     }
-}
 ```
 
 ### 4.4. Data Processing
@@ -435,7 +461,7 @@ erDiagram
 -   **Authentication (`auth.py`)**: This module handles all authentication-related logic. It uses `passlib` with the `bcrypt` algorithm for password hashing and `python-jose` for creating and verifying JWT tokens. It provides functions to create users, verify passwords, and get the current authenticated user from a token.
 -   **Rule Engine (`rule_engine.py`)**: This component is responsible for categorizing transactions based on a set of user-defined rules. When new transactions are fetched, the rule engine applies the rules to automatically assign a category and subcategory to each transaction.
 -   **Data Aggregation**: The backend performs various data aggregations on the fly to provide data for the frontend charts. For example, it calculates monthly expenses per category, total asset values, and budget vs. expense comparisons.
--   **Activity Logging**: The system logs various user activities for analytics and auditing purposes. The `log_activity` function is used throughout the backend to record events such as user login, profile creation, transaction recording, and more.
+-   **Activity Logging**: The system logs various user activities for analytics and auditing purposes. The `log_activity` function is used throughout the backend to record events such as user login, profile creation, transaction recording, asset management, and administrative actions. The `ActivityType` enum provides a comprehensive list of trackable events.
 
 ## 5. Data Migration
 
