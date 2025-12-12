@@ -3,6 +3,7 @@ import { Table, Card, Alert, Button, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import { formatCurrency } from './utils/currency';
 import { RocketFill, PlusCircle, ArrowUpCircleFill, ArrowDownCircleFill, InfoCircleFill } from 'react-bootstrap-icons'; // Import icons
+import './HomePage.css'; // Import the new CSS file
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -72,6 +73,10 @@ const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome, currentU
     const generateSummaryParagraph = () => {
         const summaries = [];
 
+        if (profilesSummary.length === 0) {
+            return [{ message: "It looks like you haven't created any profiles yet. Start your financial journey by creating your first profile!", icon: <InfoCircleFill className="me-2 text-info" />, sentiment: "neutral" }];
+        }
+
         expenseManagerProfiles.forEach(profile => {
             const netIncome = profile.net_income ?? 0;
             const formattedNetIncome = formatCurrency(Math.abs(netIncome), profile.currency);
@@ -130,9 +135,13 @@ const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome, currentU
 
     return (
         <div className="homepage-container">
-            <Card className="shadow-lg mb-4">
+            <Card className="shadow-lg mb-4 homepage-summary-card">
                 <Card.Body>
                     <h2 className="mb-3">{getGreeting()}</h2>
+                    <p className="lead mb-4">
+                        Welcome to your personalized financial dashboard! Here's a quick overview of your financial health.
+                        Let's make informed decisions together to achieve your financial goals.
+                    </p>
                     {profilesSummary.length > 0 && (
                         <>
                             {summaryMessages.map((summary, index) => (

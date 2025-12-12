@@ -1,0 +1,37 @@
+/* src/frontend/expense-visualizer/src/HomePage.css */
+
+/* Import Google Fonts - Montserrat */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+/* Homepage Summary Card Specific Styling */
+.homepage-summary-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #c9e7ff 100%); /* Light gradient background */
+    border: 1px solid #a8d8ff;
+    color: #2c3e50; /* Darker text for contrast */
+    font-family: 'Montserrat', sans-serif; /* Personalized font */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+    border-radius: 15px;
+    padding: 25px;
+}
+
+.homepage-summary-card h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.homepage-summary-card .lead {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    color: #34495e;
+    line-height: 1.6;
+}
+
+.homepage-summary-card .text-success {
+    color: #27ae60 !important; /* Stronger green */
+}
+
+.homepage-summary-card .text-danger {
+    color: #c0392b !important; /* Stronger red */
+}
