@@ -1755,8 +1755,13 @@ def get_subscriptions_count(
     session: Session = Depends(get_session),
     admin_user: User = Depends(auth.get_current_admin_user),
 ):
-    subscription_count = session.exec(select(SubscriptionHistory).where(SubscriptionHistory.end_date > datetime.now())).all()
-    return {"count": len(subscription_count)}
+    active_subscriptions = session.exec(select(SubscriptionHistory).where(SubscriptionHistory.end_date > datetime.now())).all()
+    
+    subscription_type_counts = {}
+    for sub in active_subscriptions:
+        subscription_type_counts[sub.subscription_type] = subscription_type_counts.get(sub.subscription_type, 0) + 1
+            
+    return subscription_type_counts
 
 @app.get("/api/admin/proposals/count")
 def get_proposals_count(

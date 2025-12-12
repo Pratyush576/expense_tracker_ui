@@ -14,7 +14,7 @@ const subscriptionTypeColors = {
 
 const AdminDashboardHome = () => {
     const [totalUsers, setTotalUsers] = useState(0);
-    const [activeSubscriptions, setActiveSubscriptions] = useState(0);
+    const [activeSubscriptionsBreakdown, setActiveSubscriptionsBreakdown] = useState({}); // Changed to breakdown
     const [pendingProposals, setPendingProposals] = useState(0);
     const [recentActivities, setRecentActivities] = useState([]);
     const [userSignups, setUserSignups] = useState([]);
@@ -33,7 +33,7 @@ const AdminDashboardHome = () => {
 
                 const [
                     usersCountRes,
-                    subscriptionsRes,
+                    subscriptionsRes, // This now returns breakdown
                     proposalsRes,
                     activitiesRes,
                     userSignupsRes,
@@ -52,7 +52,7 @@ const AdminDashboardHome = () => {
                 ]);
 
                 setTotalUsers(usersCountRes.data.count);
-                setActiveSubscriptions(subscriptionsRes.data.count);
+                setActiveSubscriptionsBreakdown(subscriptionsRes.data); // Set breakdown
                 setPendingProposals(proposalsRes.data.count);
                 setRecentActivities(activitiesRes.data);
                 setUserSignups(userSignupsRes.data);
@@ -126,7 +126,11 @@ const AdminDashboardHome = () => {
                                 <GraphUp size={30} className="text-success me-3" />
                                 <div>
                                     <Card.Title className="mb-0">Active Subscriptions</Card.Title>
-                                    <Card.Text className="fs-3 fw-bold">{activeSubscriptions}</Card.Text>
+                                    {Object.entries(activeSubscriptionsBreakdown).map(([type, count]) => (
+                                        <Card.Text key={type} className="mb-0">
+                                            {type.charAt(0).toUpperCase() + type.slice(1)}: <span className="fw-bold">{count}</span>
+                                        </Card.Text>
+                                    ))}
                                 </div>
                             </div>
                         </Card.Body>
