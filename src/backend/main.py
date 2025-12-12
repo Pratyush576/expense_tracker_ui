@@ -73,6 +73,16 @@ def on_startup():
                 session.commit()
                 logging.info("Added 'user_last_name' column to 'user' table.")
 
+            if "mobile_phone_number" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN mobile_phone_number VARCHAR(20)"))
+                session.commit()
+                logging.info("Added 'mobile_phone_number' column to 'user' table.")
+
+            if "country_code" not in user_column_names:
+                session.execute(text("ALTER TABLE user ADD COLUMN country_code VARCHAR(2)"))
+                session.commit()
+                logging.info("Added 'country_code' column to 'user' table.")
+            
             if "subscription_expiry_date" not in user_column_names:
                 session.execute(text("ALTER TABLE user ADD COLUMN subscription_expiry_date DATETIME"))
                 session.commit()
@@ -149,6 +159,27 @@ def log_activity(request: Request, session: Session, user_id: int, activity_type
     session.refresh(user_activity)
     logging.info(f"User activity logged: User ID {user_id}, Type: {activity_type}, IP: {ip_address}, Profile ID: {profile_id}")
 
+def _get_country_code_from_ip(ip_address: Optional[str]) -> Optional[str]:
+    """
+    Placeholder function to get country code from IP address.
+    In a real application, this would integrate with a GeoIP database or API.
+    For now, it returns a default or None.
+    """
+    if not ip_address or ip_address == "127.0.0.1" or ip_address == "localhost":
+        return "US" # Default to US for local development
+    # Example of a simple mapping (not robust for production)
+    if ip_address.startswith("192.168."):
+        return "US"
+    # In a real scenario, you'd use a library like geoip2 or make an API call
+    # For example:
+    # try:
+    #     reader = geoip2.database.Reader('/path/to/GeoLite2-Country.mmdb')
+    #     response = reader.country(ip_address)
+    #     return response.country.iso_code
+    # except Exception:
+    #     return None
+    return "US" # Fallback or integrate with a real service
+
 # Pydantic models for user authentication
 class UserCreate(BaseModel):
     email: str
@@ -198,12 +229,17 @@ def create_user(user: UserCreate, request: Request, session: Session = Depends(g
     now = datetime.now()
     trial_expiry_date = now + timedelta(days=trial_days)
 
+    # Determine country code from IP address
+    ip_address = request.client.host if request.client else None
+    country_code = _get_country_code_from_ip(ip_address)
+
     db_user = User(
         email=user.email,
         hashed_password=hashed_password,
         user_first_name=user.user_first_name,
         user_last_name=user.user_last_name,
         mobile_phone_number=user.mobile_phone_number,
+        country_code=country_code, # Store the determined country code
         subscription_expiry_date=trial_expiry_date
     )
     session.add(db_user)

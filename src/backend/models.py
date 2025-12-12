@@ -99,6 +99,7 @@ class User(SQLModel, table=True):
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None
     mobile_phone_number: Optional[str] = None
+    country_code: Optional[str] = Field(default=None, max_length=2) # New field for user's country
     subscription_expiry_date: Optional[datetime] = Field(default=None)
     role: Role = Field(default=Role.USER)
     account_creation_time: datetime = Field(default_factory=datetime.utcnow)
