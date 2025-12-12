@@ -8,6 +8,7 @@ import DiscountManagement from './admin/DiscountManagement';
 import ProposalForm from './admin/ProposalForm';
 import MyProposals from './admin/MyProposals';
 import ProposalQueue from './admin/ProposalQueue';
+import AdminDashboardHome from './admin/AdminDashboardHome';
 import LogDashboard from './admin/LogDashboard'; // Import LogDashboard
 import authService from '../utils/authService';
 
@@ -29,7 +30,7 @@ const AdminPanel = ({ currentUser }) => {
         isAdmin && <Route key="logs" path="logs" element={<LogDashboard />} />,
         (isAdmin || isManager) && <Route key="my-proposals" path="my-proposals" element={<MyProposals />} />,
         (isAdmin || isManager) && <Route key="new-proposal" path="new-proposal" element={<ProposalForm />} />,
-        <Route key="index" index element={<h2 className="text-center my-4">Welcome to the Admin Panel</h2>} />
+        <Route key="index" index element={<AdminDashboardHome />} />
     ].filter(Boolean); // Filter out false/null values
 
     return (

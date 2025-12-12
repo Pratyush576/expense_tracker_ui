@@ -7,7 +7,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 const AdminDashboardHome = () => {
-    console.log('AdminDashboardHome component is rendering');
     const [totalUsers, setTotalUsers] = useState(0);
     const [activeSubscriptions, setActiveSubscriptions] = useState(0);
     const [pendingProposals, setPendingProposals] = useState(0);
@@ -68,8 +67,6 @@ const AdminDashboardHome = () => {
         return <Alert variant="danger">{error}</Alert>;
     }
 
-    console.log('userSignups:', userSignups);
-
     return (
         <div className="admin-dashboard-home">
             <h3 className="mb-4">Admin Dashboard Overview</h3>
@@ -123,14 +120,16 @@ const AdminDashboardHome = () => {
                             User Sign-ups (Last 7 Days)
                         </Card.Header>
                         <Card.Body>
-                            <BarChart width={500} height={300} data={userSignups}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="date" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="count" fill="#8884d8" name="Sign-ups" />
-                            </BarChart>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={userSignups}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#8884d8" name="Sign-ups" />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </Card.Body>
                     </Card>
                 </Col>
