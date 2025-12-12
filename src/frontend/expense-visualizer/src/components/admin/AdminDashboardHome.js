@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Spinner, ListGroup, Badge, Alert } from 'react-bootstrap'; // Added Alert
+import { Card, Row, Col, Spinner, ListGroup, Badge, Alert } from 'react-bootstrap';
 import axios from 'axios';
-import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill } from 'react-bootstrap-icons'; // Icons
+import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill } from 'react-bootstrap-icons';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -10,6 +11,7 @@ const AdminDashboardHome = () => {
     const [activeSubscriptions, setActiveSubscriptions] = useState(0);
     const [pendingProposals, setPendingProposals] = useState(0);
     const [recentActivities, setRecentActivities] = useState([]);
+    const [userSignups, setUserSignups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -24,18 +26,21 @@ const AdminDashboardHome = () => {
                     usersCountRes,
                     subscriptionsRes,
                     proposalsRes,
-                    activitiesRes
+                    activitiesRes,
+                    userSignupsRes
                 ] = await Promise.all([
                     axios.get(`${API_BASE_URL}/api/admin/users/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/subscriptions/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/proposals/count`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/admin/activity/recent?limit=10`, { headers })
+                    axios.get(`${API_BASE_URL}/api/admin/activity/recent?limit=10`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/admin/user-signups-by-day`, { headers })
                 ]);
 
                 setTotalUsers(usersCountRes.data.count);
                 setActiveSubscriptions(subscriptionsRes.data.count);
                 setPendingProposals(proposalsRes.data.count);
                 setRecentActivities(activitiesRes.data);
+                setUserSignups(userSignupsRes.data);
 
             } catch (err) {
                 console.error("Error fetching admin dashboard data:", err);
@@ -103,6 +108,28 @@ const AdminDashboardHome = () => {
                                     <Card.Text className="fs-3 fw-bold">{pendingProposals}</Card.Text>
                                 </div>
                             </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row>
+                <Col md={12}>
+                    <Card className="shadow-sm mb-4">
+                        <Card.Header className="bg-light">
+                            User Sign-ups (Last 7 Days)
+                        </Card.Header>
+                        <Card.Body>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={userSignups}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="count" fill="#8884d8" name="Sign-ups" />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </Card.Body>
                     </Card>
                 </Col>

@@ -133,7 +133,7 @@ def on_startup():
                 session.commit()
                 logging.info("Added 'profile_id' column to 'useractivity' table.")
 
-def log_activity(session: Session, user_id: int, activity_type: ActivityType, request: Request, profile_id: Optional[int] = None):
+def log_activity(request: Request, session: Session, user_id: int, activity_type: ActivityType, profile_id: Optional[int] = None):
     ip_address = request.client.host if request.client else None
     user_activity = UserActivity(user_id=user_id, activity_type=activity_type, ip_address=ip_address, profile_id=profile_id)
     session.add(user_activity)
@@ -199,7 +199,7 @@ def create_user(user: UserCreate, request: Request, session: Session = Depends(g
     session.commit()
     session.refresh(db_user) # Get the user ID
 
-    log_activity(session, db_user.id, ActivityType.USER_SIGNED_UP, request)
+    log_activity(request, session, db_user.id, ActivityType.USER_SIGNED_UP)
 
     # Create subscription history record
     trial_history = SubscriptionHistory(
@@ -229,7 +229,7 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    log_activity(session, user.id, ActivityType.USER_LOGGED_IN, request) # Log user login activity
+    log_activity(request, session, user.id, ActivityType.USER_LOGGED_IN) # Log user login activity
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -252,7 +252,7 @@ def read_users_me(current_user: User = Depends(auth.get_current_active_user)):
 
 
 @app.put("/api/users/me", response_model=UserResponse)
-def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session), request: Request = Depends()):
+def update_users_me(user_update: UserUpdate, request: Request, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
     if user_update.user_first_name is not None:
         current_user.user_first_name = user_update.user_first_name
     if user_update.user_last_name is not None:
@@ -264,7 +264,7 @@ def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.g
     session.commit()
     session.refresh(current_user)
     
-    log_activity(session, current_user.id, ActivityType.USER_PROFILE_UPDATED, request, profile_id=None)
+    log_activity(request, session, current_user.id, ActivityType.USER_PROFILE_UPDATED, profile_id=None)
 
     is_premium = False
     if current_user.subscription_expiry_date:
@@ -282,7 +282,7 @@ def update_users_me(user_update: UserUpdate, current_user: User = Depends(auth.g
 
 
 @app.put("/api/users/me/password")
-def change_password_me(password_reset: PasswordReset, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
+def change_password_me(password_reset: PasswordReset, request: Request, current_user: User = Depends(auth.get_current_active_user), session: Session = Depends(get_session)):
     if not auth.verify_password(password_reset.old_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect old password")
     if password_reset.new_password != password_reset.confirm_new_password:
@@ -294,7 +294,7 @@ def change_password_me(password_reset: PasswordReset, current_user: User = Depen
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    log_activity(session, current_user.id, ActivityType.USER_PASSWORD_CHANGED, request)
+    log_activity(request, session, current_user.id, ActivityType.USER_PASSWORD_CHANGED)
     return {"message": "Password updated successfully"}
 
 
@@ -302,7 +302,7 @@ class SubscriptionCreate(BaseModel):
     period: str # "monthly" or "yearly"
 
 @app.post("/api/users/me/subscribe", response_model=UserResponse)
-def subscribe(subscription: SubscriptionCreate, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
+def subscribe(subscription: SubscriptionCreate, request: Request, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
     now = datetime.now()
     
     # Determine the duration of the subscription
@@ -360,7 +360,7 @@ def subscribe(subscription: SubscriptionCreate, session: Session = Depends(get_s
     session.add(payment)
     session.commit()
 
-    log_activity(session, current_user.id, ActivityType.USER_SUBSCRIBED, request)
+    log_activity(request, session, current_user.id, ActivityType.USER_SUBSCRIBED)
 
     # Return updated user status
     return UserResponse(
@@ -456,7 +456,7 @@ def create_payment_source(
     session.add(db_payment_source)
     session.commit()
     session.refresh(db_payment_source)
-    log_activity(session, current_user.id, ActivityType.PAYMENT_SOURCE_CREATED, request, profile_id=payment_source.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.PAYMENT_SOURCE_CREATED, profile_id=payment_source.profile_id)
     return db_payment_source
 
 
@@ -483,7 +483,7 @@ def delete_payment_source(
         raise HTTPException(status_code=404, detail="Payment Source not found")
     session.delete(payment_source)
     session.commit()
-    log_activity(session, current_user.id, ActivityType.PAYMENT_SOURCE_DELETED, request, profile_id=payment_source.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.PAYMENT_SOURCE_DELETED, profile_id=payment_source.profile_id)
     return {"message": "Payment Source deleted successfully"}
 
 
@@ -495,7 +495,7 @@ def create_transaction(
     session.add(db_transaction)
     session.commit()
     session.refresh(db_transaction)
-    log_activity(session, current_user.id, ActivityType.TRANSACTION_RECORDED, request, profile_id=transaction.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.TRANSACTION_RECORDED, profile_id=transaction.profile_id)
     return db_transaction
 
 
@@ -514,7 +514,7 @@ def create_transactions_bulk(
     for db_transaction in created_transactions:
         session.refresh(db_transaction)
     
-    log_activity(session, current_user.id, ActivityType.TRANSACTION_BULK_UPLOADED, request, profile_id=transaction_list.transactions[0].profile_id)
+    log_activity(request, session, current_user.id, ActivityType.TRANSACTION_BULK_UPLOADED, profile_id=transaction_list.transactions[0].profile_id)
     return created_transactions
 
 
@@ -531,7 +531,7 @@ def delete_transaction(
         raise HTTPException(status_code=404, detail="Transaction not found")
     session.delete(transaction)
     session.commit()
-    log_activity(session, current_user.id, ActivityType.TRANSACTION_DELETED, request, profile_id=profile_id)
+    log_activity(request, session, current_user.id, ActivityType.TRANSACTION_DELETED, profile_id=profile_id)
     return {"message": "Transaction deleted successfully"}
 
 
@@ -584,7 +584,7 @@ class Settings(BaseModel):
 
 
 @app.post("/api/profiles", response_model=ProfileResponse)
-def create_profile(profile: ProfileCreate, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
+def create_profile(profile: ProfileCreate, request: Request, session: Session = Depends(get_session), current_user: User = Depends(auth.get_current_active_user)):
     logging.info(f"Received profile_type: {profile.profile_type}, type: {type(profile.profile_type)}")
     
     try:
@@ -595,7 +595,7 @@ def create_profile(profile: ProfileCreate, session: Session = Depends(get_sessio
     session.add(db_profile)
     session.commit()
     session.refresh(db_profile)
-    log_activity(session, current_user.id, ActivityType.PROFILE_CREATED, request, profile_id=db_profile.id)
+    log_activity(request, session, current_user.id, ActivityType.PROFILE_CREATED, profile_id=db_profile.id)
     return db_profile
 
 
@@ -625,7 +625,7 @@ def delete_profile(profile_id: int, request: Request, session: Session = Depends
         raise HTTPException(status_code=404, detail="Profile not found")
     session.delete(profile)
     session.commit()
-    log_activity(session, current_user.id, ActivityType.PROFILE_DELETED, request, profile_id=profile_id)
+    log_activity(request, session, current_user.id, ActivityType.PROFILE_DELETED, profile_id=profile_id)
     return {"message": "Profile deleted successfully"}
 
 
@@ -650,9 +650,9 @@ def update_profile(
     if profile_update.is_hidden is not None:
         if profile.is_hidden != profile_update.is_hidden:
             if profile_update.is_hidden:
-                log_activity(session, current_user.id, ActivityType.PROFILE_HIDDEN, request, profile_id=profile.id)
+                log_activity(request, session, current_user.id, ActivityType.PROFILE_HIDDEN, profile_id=profile.id)
             else:
-                log_activity(session, current_user.id, ActivityType.PROFILE_UNHIDDEN, request, profile_id=profile.id)
+                log_activity(request, session, current_user.id, ActivityType.PROFILE_UNHIDDEN, profile_id=profile.id)
         profile.is_hidden = profile_update.is_hidden
         activity_logged = True
     if profile_update.profile_type is not None:
@@ -663,7 +663,7 @@ def update_profile(
     session.commit()
     session.refresh(profile)
     if activity_logged and (profile_update.name is not None or profile_update.currency is not None or profile_update.profile_type is not None):
-        log_activity(session, current_user.id, ActivityType.PROFILE_UPDATED, request, profile_id=profile.id)
+        log_activity(request, session, current_user.id, ActivityType.PROFILE_UPDATED, profile_id=profile.id)
     return profile
 
 
@@ -730,7 +730,7 @@ def create_asset_type(
     session.add(db_asset_type)
     session.commit()
     session.refresh(db_asset_type)
-    log_activity(session, current_user.id, ActivityType.ASSET_TYPE_CREATED, request, profile_id=asset_type.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.ASSET_TYPE_CREATED, profile_id=asset_type.profile_id)
     return AssetTypeResponse(
         id=db_asset_type.id,
         profile_id=db_asset_type.profile_id,
@@ -792,7 +792,7 @@ def update_asset_type(
     session.add(db_asset_type)
     session.commit()
     session.refresh(db_asset_type)
-    log_activity(session, current_user.id, ActivityType.ASSET_TYPE_UPDATED, request, profile_id=db_asset_type.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.ASSET_TYPE_UPDATED, profile_id=db_asset_type.profile_id)
     return AssetTypeResponse(
         id=db_asset_type.id,
         profile_id=db_asset_type.profile_id,
@@ -810,7 +810,7 @@ def delete_asset_type(
         raise HTTPException(status_code=404, detail="Asset Type not found")
     session.delete(asset_type)
     session.commit()
-    log_activity(session, current_user.id, ActivityType.ASSET_TYPE_DELETED, request, profile_id=asset_type.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.ASSET_TYPE_DELETED, profile_id=asset_type.profile_id)
     return {"message": "Asset Type deleted successfully"}
 
 
@@ -845,7 +845,7 @@ def create_assets_bulk(
                 session.commit()
                 session.refresh(existing_asset)
                 created_or_updated_assets.append(existing_asset)
-                log_activity(session, current_user.id, ActivityType.ASSET_UPDATED, request, profile_id=existing_asset.profile_id)
+                log_activity(request, session, current_user.id, ActivityType.ASSET_UPDATED, profile_id=existing_asset.profile_id)
             else:
                 # Create new asset
                 db_asset = Asset.model_validate(asset_data)
@@ -853,7 +853,7 @@ def create_assets_bulk(
                 session.commit()
                 session.refresh(db_asset)
                 created_or_updated_assets.append(db_asset)
-                log_activity(session, current_user.id, ActivityType.ASSET_RECORDED, request, profile_id=db_asset.profile_id)
+                log_activity(request, session, current_user.id, ActivityType.ASSET_RECORDED, profile_id=db_asset.profile_id)
         except ValidationError as e:
             logging.error(f"Pydantic ValidationError details: {e}")
             error_details = e.errors()
@@ -1026,7 +1026,7 @@ def update_asset(
     session.add(db_asset)
     session.commit()
     session.refresh(db_asset)
-    log_activity(session, current_user.id, ActivityType.ASSET_UPDATED, request, profile_id=db_asset.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.ASSET_UPDATED, profile_id=db_asset.profile_id)
     return db_asset
 
 
@@ -1039,7 +1039,7 @@ def delete_asset(
         raise HTTPException(status_code=404, detail="Asset not found")
     session.delete(asset)
     session.commit()
-    log_activity(session, current_user.id, ActivityType.ASSET_DELETED, request, profile_id=asset.profile_id)
+    log_activity(request, session, current_user.id, ActivityType.ASSET_DELETED, profile_id=asset.profile_id)
     return {"message": "Asset deleted successfully"}
 
 
@@ -1325,7 +1325,7 @@ def update_settings(
         session.add(db_budget)
 
     session.commit()
-    log_activity(session, current_user.id, ActivityType.SETTINGS_UPDATED, request, profile_id=profile_id)
+    log_activity(request, session, current_user.id, ActivityType.SETTINGS_UPDATED, profile_id=profile_id)
     return {"message": "Settings updated successfully"}
 
 
@@ -1686,7 +1686,7 @@ def log_generic_activity(
 ):
     # Log the received payload for debugging
     logging.info(f"Received log_activity request payload: {jsonable_encoder(log_request)}")
-    log_activity(session, current_user.id, log_request.activity_type, request, profile_id=log_request.profile_id)
+    log_activity(request, session, current_user.id, log_request.activity_type, profile_id=log_request.profile_id)
     return {"message": f"Activity '{log_request.activity_type}' logged successfully"}
 
 
@@ -1706,7 +1706,7 @@ def assign_role(
     session.add(target_user)
     session.commit()
     session.refresh(target_user)
-    log_activity(session, admin_user.id, ActivityType.ADMIN_ROLE_ASSIGNED, request)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_ROLE_ASSIGNED)
 
     is_premium = False
     if target_user.subscription_expiry_date:
@@ -1765,6 +1765,36 @@ def get_proposals_count(
 ):
     proposal_count = session.exec(select(Proposal).where(Proposal.status == "pending")).all()
     return {"count": len(proposal_count)}
+
+@app.get("/api/admin/user-signups-by-day")
+def get_user_signups_by_day(
+    days: int = 7,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+    
+    signups = session.exec(
+        select(UserActivity).where(
+            UserActivity.activity_type == ActivityType.USER_SIGNED_UP,
+            UserActivity.timestamp >= start_date,
+            UserActivity.timestamp <= end_date
+        )
+    ).all()
+    
+    signups_by_day = {}
+    for i in range(days):
+        date = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        signups_by_day[date] = 0
+        
+    for signup in signups:
+        date_str = signup.timestamp.strftime("%Y-%m-%d")
+        if date_str in signups_by_day:
+            signups_by_day[date_str] += 1
+            
+    return [{"date": date, "count": count} for date, count in signups_by_day.items()]
+
 
 @app.get("/api/admin/activity/recent", response_model=List[UserActivity])
 def get_recent_activities(
@@ -1871,7 +1901,7 @@ def create_geographic_price(
     session.add(price)
     session.commit()
     session.refresh(price)
-    log_activity(session, admin_user.id, ActivityType.ADMIN_PRICING_CREATED, request)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_PRICING_CREATED)
     return price
 
 @app.get("/api/admin/pricing", response_model=List[GeographicPrice])
@@ -1901,7 +1931,7 @@ def update_geographic_price(
     session.add(price)
     session.commit()
     session.refresh(price)
-    log_activity(session, admin_user.id, ActivityType.ADMIN_PRICING_UPDATED, request)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_PRICING_UPDATED)
     return price
 
 @app.get("/api/pricing", response_model=List[GeographicPrice])
@@ -1939,7 +1969,7 @@ def create_discount(
     session.add(discount)
     session.commit()
     session.refresh(discount)
-    log_activity(session, admin_user.id, ActivityType.ADMIN_DISCOUNT_CREATED, request)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_DISCOUNT_CREATED)
     return discount
 
 @app.get("/api/admin/discounts", response_model=List[Discount])
@@ -1969,7 +1999,7 @@ def update_discount(
     session.add(discount)
     session.commit()
     session.refresh(discount)
-    log_activity(session, admin_user.id, ActivityType.ADMIN_DISCOUNT_UPDATED, request)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_DISCOUNT_UPDATED)
     return discount
 
 @app.get("/api/discounts", response_model=List[Discount])
@@ -2013,7 +2043,7 @@ def create_proposal(
     
     session.commit()
     session.refresh(proposal)
-    log_activity(session, manager_user.id, ActivityType.MANAGER_PROPOSAL_CREATED, request)
+    log_activity(request, session, manager_user.id, ActivityType.MANAGER_PROPOSAL_CREATED)
     return proposal
 
 @app.get("/api/manager/proposals", response_model=List[Proposal])
