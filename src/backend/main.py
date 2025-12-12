@@ -29,7 +29,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 
 from backend.database import create_db_and_tables, engine, get_session
-from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget, UserActivity, ActivityType
+from backend.models import User, Profile, Transaction, Category, Rule, Budget, PaymentSource, PaymentType, ProfileType, Asset, AssetType, SubscriptionHistory, PaymentTransaction, Role, GeographicPrice, Discount, Proposal, ProposalTarget, UserActivity, ActivityType, AdminSetting
 from backend.processing.rule_engine import RuleEngine
 from backend import auth
 from fastapi.security import OAuth2PasswordRequestForm
@@ -132,6 +132,14 @@ def on_startup():
                 session.execute(text("ALTER TABLE useractivity ADD COLUMN profile_id INTEGER"))
                 session.commit()
                 logging.info("Added 'profile_id' column to 'useractivity' table.")
+        
+        # Add default admin settings if not present
+        if "adminsetting" in inspector.get_table_names():
+            default_trial_days_setting = session.exec(select(AdminSetting).where(AdminSetting.key == "DEFAULT_TRIAL_DAYS")).first()
+            if not default_trial_days_setting:
+                session.add(AdminSetting(key="DEFAULT_TRIAL_DAYS", value="30"))
+                session.commit()
+                logging.info("Added default 'DEFAULT_TRIAL_DAYS' setting to 'adminsetting' table.")
 
 def log_activity(request: Request, session: Session, user_id: int, activity_type: ActivityType, profile_id: Optional[int] = None):
     ip_address = request.client.host if request.client else None
@@ -183,9 +191,12 @@ def create_user(user: UserCreate, request: Request, session: Session = Depends(g
     
     hashed_password = auth.get_password_hash(user.password)
     
-    # New logic for subscription
+    # Get default trial days from AdminSetting
+    default_trial_days_setting = session.exec(select(AdminSetting).where(AdminSetting.key == "DEFAULT_TRIAL_DAYS")).first()
+    trial_days = int(default_trial_days_setting.value) if default_trial_days_setting else 30 # Default to 30 if not set
+    
     now = datetime.now()
-    trial_expiry_date = now + timedelta(days=30)
+    trial_expiry_date = now + timedelta(days=trial_days)
 
     db_user = User(
         email=user.email,
@@ -2048,6 +2059,41 @@ def get_activity_logs(
         result.append(entry)
 
     return result
+
+# Pydantic model for updating admin settings
+class AdminSettingUpdate(BaseModel):
+    value: str
+
+@app.get("/api/admin/settings/{key}", response_model=AdminSetting)
+def get_admin_setting(
+    key: str,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    setting = session.exec(select(AdminSetting).where(AdminSetting.key == key)).first()
+    if not setting:
+        raise HTTPException(status_code=404, detail="Setting not found")
+    return setting
+
+@app.put("/api/admin/settings/{key}", response_model=AdminSetting)
+def update_admin_setting(
+    key: str,
+    setting_update: AdminSettingUpdate,
+    request: Request,
+    session: Session = Depends(get_session),
+    admin_user: User = Depends(auth.get_current_admin_user),
+):
+    setting = session.exec(select(AdminSetting).where(AdminSetting.key == key)).first()
+    if not setting:
+        raise HTTPException(status_code=404, detail="Setting not found")
+    
+    setting.value = setting_update.value
+    session.add(setting)
+    session.commit()
+    session.refresh(setting)
+    # Log activity for admin setting update (consider a new ActivityType if needed)
+    log_activity(request, session, admin_user.id, ActivityType.ADMIN_PRICING_UPDATED) # Reusing for now
+    return setting
 
 # --- Pricing Endpoints ---
 
