@@ -142,6 +142,11 @@ def on_startup():
                 session.execute(text("ALTER TABLE useractivity ADD COLUMN profile_id INTEGER"))
                 session.commit()
                 logging.info("Added 'profile_id' column to 'useractivity' table.")
+            
+            if "country_code" not in useractivity_column_names:
+                session.execute(text("ALTER TABLE useractivity ADD COLUMN country_code VARCHAR(2)"))
+                session.commit()
+                logging.info("Added 'country_code' column to 'useractivity' table.")
         
         # Add default admin settings if not present
         if "adminsetting" in inspector.get_table_names():
@@ -153,11 +158,12 @@ def on_startup():
 
 def log_activity(request: Request, session: Session, user_id: int, activity_type: ActivityType, profile_id: Optional[int] = None):
     ip_address = request.client.host if request.client else None
-    user_activity = UserActivity(user_id=user_id, activity_type=activity_type, ip_address=ip_address, profile_id=profile_id)
+    country_code = _get_country_code_from_ip(ip_address) # Get country code
+    user_activity = UserActivity(user_id=user_id, activity_type=activity_type, ip_address=ip_address, profile_id=profile_id, country_code=country_code)
     session.add(user_activity)
     session.commit()
     session.refresh(user_activity)
-    logging.info(f"User activity logged: User ID {user_id}, Type: {activity_type}, IP: {ip_address}, Profile ID: {profile_id}")
+    logging.info(f"User activity logged: User ID {user_id}, Type: {activity_type}, IP: {ip_address}, Country: {country_code}, Profile ID: {profile_id}")
 
 def _get_country_code_from_ip(ip_address: Optional[str]) -> Optional[str]:
     """

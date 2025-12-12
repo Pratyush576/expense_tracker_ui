@@ -220,6 +220,8 @@ class UserActivity(SQLModel, table=True):
     activity_type: ActivityType # Use the new Enum
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     ip_address: Optional[str] = None
+    country_code: Optional[str] = Field(default=None, max_length=2) # New field for user's country
+
 
     user: "User" = Relationship(back_populates="activities")
 
