@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 const AdminDashboardHome = () => {
+    console.log('AdminDashboardHome component is rendering');
     const [totalUsers, setTotalUsers] = useState(0);
     const [activeSubscriptions, setActiveSubscriptions] = useState(0);
     const [pendingProposals, setPendingProposals] = useState(0);
