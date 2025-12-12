@@ -26,11 +26,11 @@ The Expense Tracker is a full-stack web application with a React frontend and a 
 -   **`ARCHITECTURE.md` Overhaul**: The architecture document has been updated to reflect the current state of the application. This includes:
     -   A revised frontend component hierarchy diagram.
     -   Updated descriptions of the main frontend components.
-    -   An expanded list of backend API endpoints, including those for user authentication and asset management.
+    -   An expanded list of backend API endpoints, including those for user authentication, premium subscriptions, and admin functionalities.
     -   A corrected and more detailed database schema diagram.
 
 -   **`README.md` Update**: The main `README.md` file has been rewritten to provide a comprehensive and up-to-date overview of the project. The new `README` includes:
-    -   An updated description of the application's features, including user authentication and asset management.
+    -   An updated description of the application's features, including user authentication, premium subscriptions, and the admin panel.
     -   Revised lists of frontend and backend components.
     -   A complete and accurate list of API endpoints.
     -   An updated application flow that reflects the current user experience.

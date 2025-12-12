@@ -20,7 +20,7 @@ This document provides a detailed overview of the architecture of the Expense Tr
 
 ## 1. Overview
 
-The Expense Tracker is a web-based application designed to help users track their expenses and manage their personal finances. It consists of a React-based frontend for the user interface and a FastAPI-based backend for data processing and storage. The application supports managing multiple user profiles, tracking transactions, categorizing expenses, setting budgets, and managing financial assets.
+The Expense Tracker is a web-based application designed to help users track their expenses and manage their personal finances. It consists of a React-based frontend for the user interface and a FastAPI-based backend for data processing and storage. The application supports managing multiple user profiles, tracking transactions, categorizing expenses, setting budgets, and managing financial assets. It also includes features for user authentication, premium subscriptions, and an admin panel for user and system management.
 
 ## 2. Overall Architecture
 
@@ -58,10 +58,12 @@ graph TD
     Router --> Routes;
     Routes --> LoginPage[Login Route];
     Routes --> SignupPage[Signup Route];
+    Routes --> AdminRoute[Admin Route];
     Routes --> PrivateRoute;
 
     LoginPage --> LoginComponent[Login.js];
     SignupPage --> SignupComponent[Signup.js];
+    AdminRoute --> AdminPanel[AdminPanel.js];
 
     PrivateRoute --> MainApp;
 
@@ -89,7 +91,7 @@ graph TD
     OverviewTab --> PaymentSourcePieChart;
     OverviewTab --> PaymentSourceMonthlyBarChart;
     OverviewTab --> MonthlySummaryTable;
-    OverviewTAb --> CategoryCostChart;
+    OverviewTab --> CategoryCostChart;
     OverviewTab --> MonthlyStackedBarChart;
 
     SubcategoryTrendsTab --> CategorySubcategoryMonthlyCharts;
@@ -111,24 +113,26 @@ graph TD
     SideBar --> CreateProfileModal;
     SideBar --> EditProfileModal;
     SideBar --> ManageProfilesModal;
+
+    MainApp --> SubscriptionModal;
 ```
 
 ### 3.3. Main Components
 
--   **App.js**: The root component of the application. It sets up the routing structure (distinguishing between public and private routes) and contains the `MainApp` component, which manages the main state (profiles, transactions, settings) and the layout for authenticated users.
+-   **App.js**: The root component of the application. It sets up the routing structure (distinguishing between public, private, and admin routes) and contains the `MainApp` component, which manages the main state (profiles, transactions, settings) and the layout for authenticated users.
 -   **Login.js**: A public component that provides a form for users to log in.
 -   **Signup.js**: A public component that provides a form for new users to register.
+-   **AdminPanel.js**: A private component for users with the 'ADMIN' or 'MANAGER' role. It provides a dashboard for managing users, pricing, discounts, and proposals.
 -   **authService.js**: A utility module that encapsulates the logic for handling authentication-related API calls (login, signup, logout) and managing the user's authentication token in local storage.
 -   **SideBar.js**: Displays the list of user profiles and allows users to create, edit, and delete profiles.
 -   **HomePage.js**: The landing page of the application.
 -   **AssetDashboard.js**: The main dashboard for the "Asset Manager" profile type. It displays a summary of assets and includes charts for visualizing asset data.
--   **MonthlyAssetComparisonChart.js**: A chart component that displays a monthly comparison of asset values, grouped by asset type.
--   **SubtypeDistributionChart.js**: A chart component that shows the monthly distribution of subtypes for a selected asset type.
 -   **ManualTransactionEntry.js**: A form for manually adding new transactions.
 -   **RecordAsset.js**: A form for recording new assets.
 -   **ExpenseTable.js**: Displays a table of transactions with filtering and sorting capabilities.
 -   **Settings.js**: Allows users to manage categories, subcategories, and payment sources.
 -   **RulesTab.js**: Provides an interface for creating and managing transaction categorization rules.
+-   **SubscriptionModal.js**: A modal window that allows users to subscribe to a premium plan.
 -   **Chart Components**: Various components for data visualization, such as `PaymentSourcePieChart`, `MonthlyStackedBarChart`, `CategoryCostChart`, etc.
 
 ### 3.4. Authentication Flow
@@ -179,73 +183,42 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 
 #### User and Authentication
 -   **`POST /api/users/signup`**: Register a new user.
-    -   **Request Body**: `UserCreate` model (`email`, `password`, `user_first_name`, `user_last_name`, `mobile_phone_number`).
-    -   **Response**: `User` model.
 -   **`POST /api/users/login`**: Authenticate a user and get an access token.
-    -   **Request Body**: `OAuth2PasswordRequestForm` (`username`, `password`).
-    -   **Response**: `Token` model (`access_token`, `token_type`).
 -   **`GET /api/users/me`**: Get the details of the currently authenticated user.
-    -   **Response**: `UserResponse` model.
 -   **`PUT /api/users/me`**: Update the details of the currently authenticated user.
-    -   **Request Body**: `UserUpdate` model.
-    -   **Response**: `UserResponse` model.
 -   **`PUT /api/users/me/password`**: Change the password for the currently authenticated user.
-    -   **Request Body**: `PasswordReset` model.
 -   **`POST /api/users/me/subscribe`**: Subscribe the user to a premium plan.
-    -   **Request Body**: `SubscriptionCreate` model.
-    -   **Response**: `UserResponse` model.
 -   **`GET /api/users/me/subscription_history`**: Get the subscription history for the current user.
-    -   **Response**: List of `SubscriptionHistory` models.
 
 #### Profiles
 -   **`POST /api/profiles`**: Create a new profile for the current user.
-    -   **Request Body**: `ProfileCreate` model.
-    -   **Response**: `ProfileResponse` model.
 -   **`GET /api/profiles`**: Get all profiles for the current user.
-    -   **Response**: List of `ProfileResponse` models.
 -   **`GET /api/profiles/{profile_id}`**: Get a specific profile by ID.
-    -   **Response**: `ProfileResponse` model.
 -   **`PUT /api/profiles/{profile_id}`**: Update a specific profile.
-    -   **Request Body**: `ProfileUpdate` model.
-    -   **Response**: `ProfileResponse` model.
 -   **`DELETE /api/profiles/{profile_id}`**: Delete a specific profile.
 
 #### Payment Sources
 -   **`POST /api/payment_sources`**: Create a new payment source.
-    -   **Request Body**: `PaymentSourceCreate` model.
-    -   **Response**: `PaymentSourceResponse` model.
 -   **`GET /api/profiles/{profile_id}/payment_sources`**: Get all payment sources for a profile.
-    -   **Response**: List of `PaymentSourceResponse` models.
 -   **`DELETE /api/payment_sources/{payment_source_id}`**: Delete a payment source.
 
 #### Transactions
 -   **`POST /api/transactions`**: Create a single transaction.
-    -   **Request Body**: `TransactionCreate` model.
-    -   **Response**: `Transaction` model.
 -   **`POST /api/transactions/bulk`**: Create multiple transactions in a single request.
-    -   **Request Body**: `TransactionCreateList` model.
-    -   **Response**: List of `Transaction` models.
 -   **`DELETE /api/transactions/{transaction_id}`**: Delete a transaction.
 
 #### Expenses and Financial Analysis
 -   **`GET /api/expenses`**: Get all income and expense transactions for a profile, with categorization.
-    -   **Response**: A dictionary containing `income`, `expenses`, `net_income`, and `settings`.
 -   **`GET /api/category_costs`**: Get the total cost for each expense category.
 -   **`GET /api/monthly_category_expenses`**: Get monthly expenses per category.
 -   **`GET /api/budget_vs_expenses`**: Get a comparison of budget vs. expenses over a specified period.
 
 #### Assets
 -   **`POST /api/asset_types`**: Create a new asset type.
-    -   **Request Body**: `AssetTypeCreate` model.
-    -   **Response**: `AssetTypeResponse` model.
 -   **`GET /api/profiles/{profile_id}/asset_types`**: Get all asset types for a profile.
-    -   **Response**: List of `AssetTypeResponse` models.
 -   **`PUT /api/asset_types/{asset_type_id}`**: Update an asset type.
-    -   **Request Body**: `AssetTypeUpdate` model.
 -   **`DELETE /api/asset_types/{asset_type_id}`**: Delete an asset type.
 -   **`POST /api/assets`**: Create or update assets in bulk.
-    -   **Request Body**: `AssetCreateList` model.
-    -   **Response**: List of `AssetResponse` models.
 -   **`GET /api/profiles/{profile_id}/assets`**: Get all assets for a profile.
 -   **`GET /api/profiles/{profile_id}/assets/summary`**: Get a summary of assets for a profile.
 -   **`GET /api/profiles/{profile_id}/assets/total_latest_value`**: Get the total latest value of all assets.
@@ -255,22 +228,31 @@ The backend exposes a variety of RESTful API endpoints for managing profiles, tr
 
 #### Settings
 -   **`POST /api/settings`**: Update the settings for a profile (categories, rules, budgets).
-    -   **Request Body**: `Settings` model.
+
+#### Activity Logging
+-   **`POST /api/log_activity`**: Log a user activity.
 
 #### Admin
 -   **`POST /api/admin/users/{user_id}/assign-role`**: Assign a role to a user.
 -   **`GET /api/admin/users`**: Get a list of all users.
+-   **`GET /api/admin/activity/recent`**: Get recent user activities.
+-   **`GET /api/admin/activity/logs`**: Get user activity logs with filtering and grouping.
 -   **`POST /api/admin/pricing`**: Create a new geographic price.
 -   **`GET /api/admin/pricing`**: Get all geographic prices.
+-   **`PUT /api/admin/pricing/{price_id}`**: Update a geographic price.
 -   **`POST /api/admin/discounts`**: Create a new discount.
 -   **`GET /api/admin/discounts`**: Get all discounts.
+-   **`PUT /api/admin/discounts/{discount_id}`**: Update a discount.
 -   **`POST /api/admin/proposals/{proposal_id}/approve`**: Approve a proposal.
 -   **`POST /api/admin/proposals/{proposal_id}/reject`**: Reject a proposal.
 
 #### Manager
 -   **`POST /api/manager/proposals`**: Create a new proposal.
 -   **`GET /api/manager/proposals`**: Get all proposals created by the manager.
--   **`GET /api/manager/users/{user_id}`**: Get user details by ID.
+
+#### Public Pricing and Discounts
+-   **`GET /api/pricing`**: Get all public geographic prices.
+-   **`GET /api/discounts`**: Get all public discounts.
 
 ### 4.3. Database Schema
 
@@ -281,7 +263,9 @@ erDiagram
     USER ||--o{ PROFILE : has
     USER ||--o{ SUBSCRIPTION_HISTORY : has
     USER ||--o{ PAYMENT_TRANSACTION : has
-    USER ||--o{ PROPOSAL : proposed_by
+    USER ||--o{ PROPOSAL : "proposed by"
+    USER ||--o{ PROPOSAL : "reviewed by"
+    USER ||--o{ USER_ACTIVITY : "logs"
     PROFILE ||--o{ TRANSACTION : has
     PROFILE ||--o{ CATEGORY : has
     PROFILE ||--o{ RULE : has
@@ -289,9 +273,9 @@ erDiagram
     PROFILE ||--o{ PAYMENT_SOURCE : has
     PROFILE ||--o{ ASSET_TYPE : has
     PROFILE ||--o{ ASSET : has
-    ASSET_TYPE ||--o{ ASSET : has
+    ASSET_TYPE ||--o{ ASSET : "is of type"
     PROPOSAL ||--o{ PROPOSAL_TARGET : has
-    SUBSCRIPTION_HISTORY ||--o{ PAYMENT_TRANSACTION : related_to
+    SUBSCRIPTION_HISTORY ||--o{ PAYMENT_TRANSACTION : "related to"
 
     USER {
         int id PK
@@ -302,6 +286,8 @@ erDiagram
         string mobile_phone_number
         datetime subscription_expiry_date
         string role
+        datetime account_creation_time
+        datetime account_updated_time
     }
 
     PROFILE {
@@ -392,8 +378,9 @@ erDiagram
         float amount
         string currency
         string status
-        datetime transaction_date
+        string payment_gateway
         string gateway_transaction_id
+        datetime transaction_date
     }
 
     GEOGRAPHIC_PRICE {
@@ -416,12 +403,13 @@ erDiagram
     PROPOSAL {
         int id PK
         int proposer_id FK
+        int reviewed_by_id FK
+        string status
         string proposal_type
         json payload
-        string status
-        int reviewed_by_id FK
-        datetime reviewed_at
         string rejection_reason
+        datetime created_at
+        datetime reviewed_at
     }
 
     PROPOSAL_TARGET {
@@ -430,6 +418,16 @@ erDiagram
         string target_type
         string target_value
     }
+
+    USER_ACTIVITY {
+        int id PK
+        int user_id FK
+        int profile_id FK
+        string activity_type
+        datetime timestamp
+        string ip_address
+    }
+}
 ```
 
 ### 4.4. Data Processing
@@ -437,16 +435,10 @@ erDiagram
 -   **Authentication (`auth.py`)**: This module handles all authentication-related logic. It uses `passlib` with the `bcrypt` algorithm for password hashing and `python-jose` for creating and verifying JWT tokens. It provides functions to create users, verify passwords, and get the current authenticated user from a token.
 -   **Rule Engine (`rule_engine.py`)**: This component is responsible for categorizing transactions based on a set of user-defined rules. When new transactions are fetched, the rule engine applies the rules to automatically assign a category and subcategory to each transaction.
 -   **Data Aggregation**: The backend performs various data aggregations on the fly to provide data for the frontend charts. For example, it calculates monthly expenses per category, total asset values, and budget vs. expense comparisons.
+-   **Activity Logging**: The system logs various user activities for analytics and auditing purposes. The `log_activity` function is used throughout the backend to record events such as user login, profile creation, transaction recording, and more.
 
 ## 5. Data Migration
 
 The application includes a data migration script, `src/backend/migrate_data.py`, which is responsible for migrating data from older formats (CSV and JSON) into the SQLite database.
 
 This script is intended to be run once during the initial setup of the application. It reads data from `consolidated_expenses.csv` and `user_settings.json` and populates the database with the initial set of users, profiles, transactions, and settings. This ensures a smooth transition for users who were using a previous version of the application that stored data in flat files.
-
-
-
-
----
-
-*I will continue to add more sections to this document, including detailed diagrams for the frontend and backend components.*
