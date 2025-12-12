@@ -1,8 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Nav, Container, Row, Col, Button } from 'react-bootstrap';
-import { PeopleFill, CashStack, TagFill, ClipboardCheck, ClipboardData, FileEarmarkPlus, ArrowLeft, HouseFill, GiftFill, PersonCheckFill } from 'react-bootstrap-icons'; // Import icons, including GiftFill and PersonCheckFill
-import UserManagement from './admin/UserManagement';
+import { CashStack, TagFill, ClipboardCheck, ClipboardData, FileEarmarkPlus, ArrowLeft, HouseFill, GiftFill, PersonCheckFill } from 'react-bootstrap-icons'; // Removed PeopleFill icon
 import PriceManagement from './admin/PriceManagement';
 import DiscountManagement from './admin/DiscountManagement';
 import ProposalForm from './admin/ProposalForm';
@@ -11,7 +10,7 @@ import ProposalQueue from './admin/ProposalQueue';
 import AdminDashboardHome from './admin/AdminDashboardHome';
 import LogDashboard from './admin/LogDashboard'; // Import LogDashboard
 import TrialOfferManagement from './admin/TrialOfferManagement'; // Import TrialOfferManagement
-import WhitelistManagement from './admin/WhitelistManagement'; // Import WhitelistManagement
+import WhitelistedUserRoleManagement from './admin/WhitelistedUserRoleManagement'; // Import WhitelistedUserRoleManagement
 import authService from '../utils/authService';
 
 const AdminPanel = ({ currentUser }) => {
@@ -25,13 +24,12 @@ const AdminPanel = ({ currentUser }) => {
     };
 
     const adminRoutes = [
-        isAdmin && <Route key="users" path="users" element={<UserManagement />} />,
         isAdmin && <Route key="pricing" path="pricing" element={<PriceManagement />} />,
         isAdmin && <Route key="discounts" path="discounts" element={<DiscountManagement />} />,
         isAdmin && <Route key="proposals" path="proposals" element={<ProposalQueue />} />,
         isAdmin && <Route key="logs" path="logs" element={<LogDashboard />} />,
-        isAdmin && <Route key="sign-up-offer" path="sign-up-offer" element={<TrialOfferManagement />} />, // New route for trial offer management
-        isAdmin && <Route key="whitelist" path="whitelist" element={<WhitelistManagement currentUser={currentUser} />} />, // New route for whitelist management, passing currentUser
+        isAdmin && <Route key="sign-up-offer" path="sign-up-offer" element={<TrialOfferManagement />} />,
+        isAdmin && <Route key="whitelist" path="whitelist" element={<WhitelistedUserRoleManagement currentUser={currentUser} />} />, // Updated route for whitelist management
         (isAdmin || isManager) && <Route key="my-proposals" path="my-proposals" element={<MyProposals />} />,
         (isAdmin || isManager) && <Route key="new-proposal" path="new-proposal" element={<ProposalForm />} />,
         <Route key="index" index element={<AdminDashboardHome />} />
@@ -43,13 +41,12 @@ const AdminPanel = ({ currentUser }) => {
                 <Col md={3} lg={2} className="bg-light sidebar">
                     <Nav className="flex-column">
                         <Nav.Link as={Link} to="" className="d-flex align-items-center"><HouseFill className="me-2" />Admin Home</Nav.Link>
-                        {isAdmin && <Nav.Link as={Link} to="users" className="d-flex align-items-center"><PeopleFill className="me-2" />User Management</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="pricing" className="d-flex align-items-center"><CashStack className="me-2" />Pricing</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="discounts" className="d-flex align-items-center"><TagFill className="me-2" />Discounts</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="proposals" className="d-flex align-items-center"><ClipboardCheck className="me-2" />Proposals</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="logs" className="d-flex align-items-center"><ClipboardData className="me-2" />Activity Logs</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="sign-up-offer" className="d-flex align-items-center"><GiftFill className="me-2" />Sign-up Offer</Nav.Link>}
-                        {isAdmin && <Nav.Link as={Link} to="whitelist" className="d-flex align-items-center"><PersonCheckFill className="me-2" />Whitelist Management</Nav.Link>} {/* New NavLink */}
+                        {isAdmin && <Nav.Link as={Link} to="whitelist" className="d-flex align-items-center"><PersonCheckFill className="me-2" />Whitelisted User Role Management</Nav.Link>} {/* Updated NavLink */}
                         
                         {(isAdmin || isManager) && <Nav.Link as={Link} to="my-proposals" className="d-flex align-items-center"><ClipboardData className="me-2" />My Proposals</Nav.Link>}
                         {(isAdmin || isManager) && <Nav.Link as={Link} to="new-proposal" className="d-flex align-items-center"><FileEarmarkPlus className="me-2" />New Proposal</Nav.Link>}
