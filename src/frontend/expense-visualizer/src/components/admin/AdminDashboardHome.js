@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Spinner, ListGroup, Badge, Alert } from 'react-bootstrap';
 import axios from 'axios';
-import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill, CurrencyDollar } from 'react-bootstrap-icons'; // Added CurrencyDollar icon
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PersonFill, GraphUp, FileEarmarkTextFill, ClockFill, CurrencyDollar } from 'react-bootstrap-icons';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'; // Changed BarChart, Bar to AreaChart, Area
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -14,7 +14,7 @@ const AdminDashboardHome = () => {
     const [userSignups, setUserSignups] = useState([]);
     const [newSubscriptions, setNewSubscriptions] = useState([]);
     const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
-    const [totalRevenue, setTotalRevenue] = useState([]); // New state for total revenue
+    const [totalRevenue, setTotalRevenue] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -33,7 +33,7 @@ const AdminDashboardHome = () => {
                     userSignupsRes,
                     newSubscriptionsRes,
                     expiredSubscriptionsRes,
-                    totalRevenueRes // New API call
+                    totalRevenueRes
                 ] = await Promise.all([
                     axios.get(`${API_BASE_URL}/api/admin/users/count`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/subscriptions/count`, { headers }),
@@ -42,7 +42,7 @@ const AdminDashboardHome = () => {
                     axios.get(`${API_BASE_URL}/api/admin/user-signups-by-day`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/new-subscriptions-by-day`, { headers }),
                     axios.get(`${API_BASE_URL}/api/admin/expired-subscriptions-by-day`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/admin/total-revenue-by-day`, { headers }) // New API call
+                    axios.get(`${API_BASE_URL}/api/admin/total-revenue-by-day`, { headers })
                 ]);
 
                 setTotalUsers(usersCountRes.data.count);
@@ -52,7 +52,7 @@ const AdminDashboardHome = () => {
                 setUserSignups(userSignupsRes.data);
                 setNewSubscriptions(newSubscriptionsRes.data);
                 setExpiredSubscriptions(expiredSubscriptionsRes.data);
-                setTotalRevenue(totalRevenueRes.data); // Set total revenue state
+                setTotalRevenue(totalRevenueRes.data);
 
             } catch (err) {
                 console.error("Error fetching admin dashboard data:", err);
@@ -133,14 +133,14 @@ const AdminDashboardHome = () => {
                         </Card.Header>
                         <Card.Body>
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={userSignups}>
+                                <AreaChart data={userSignups}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" />
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Bar dataKey="count" fill="#8884d8" name="Sign-ups" />
-                                </BarChart>
+                                    <Area type="monotone" dataKey="count" stroke="#8884d8" fill="#8884d8" name="Sign-ups" />
+                                </AreaChart>
                             </ResponsiveContainer>
                         </Card.Body>
                     </Card>
@@ -152,14 +152,14 @@ const AdminDashboardHome = () => {
                         </Card.Header>
                         <Card.Body>
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={totalRevenue}>
+                                <AreaChart data={totalRevenue}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" />
                                     <YAxis />
                                     <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
                                     <Legend />
-                                    <Bar dataKey="total_amount" fill="#007bff" name="Total Amount" />
-                                </BarChart>
+                                    <Area type="monotone" dataKey="total_amount" stroke="#007bff" fill="#007bff" name="Total Amount" />
+                                </AreaChart>
                             </ResponsiveContainer>
                         </Card.Body>
                     </Card>
@@ -174,14 +174,14 @@ const AdminDashboardHome = () => {
                         </Card.Header>
                         <Card.Body>
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={newSubscriptions}>
+                                <AreaChart data={newSubscriptions}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" />
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Bar dataKey="count" fill="#4CAF50" name="New Subscriptions" />
-                                </BarChart>
+                                    <Area type="monotone" dataKey="count" stroke="#4CAF50" fill="#4CAF50" name="New Subscriptions" />
+                                </AreaChart>
                             </ResponsiveContainer>
                         </Card.Body>
                     </Card>
@@ -193,14 +193,14 @@ const AdminDashboardHome = () => {
                         </Card.Header>
                         <Card.Body>
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={expiredSubscriptions}>
+                                <AreaChart data={expiredSubscriptions}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" />
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Bar dataKey="count" fill="#F44336" name="Expired Subscriptions" />
-                                </BarChart>
+                                    <Area type="monotone" dataKey="count" stroke="#F44336" fill="#F44336" name="Expired Subscriptions" />
+                                </AreaChart>
                             </ResponsiveContainer>
                         </Card.Body>
                     </Card>
