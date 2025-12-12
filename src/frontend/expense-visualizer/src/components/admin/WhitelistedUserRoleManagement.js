@@ -139,7 +139,10 @@ const WhitelistedUserRoleManagement = ({ currentUser }) => {
 
         setConfirmModalTitle('Confirm Role Change');
         setConfirmModalMessage(`Are you sure you want to change the role of User ID ${userId} from ${currentRole} to ${newRole}?`);
-        setConfirmModalAction(() => () => handleAssignRole(userId, newRole));
+        setConfirmModalAction(() => async () => {
+            await handleAssignRole(userId, newRole);
+            setShowConfirmModal(false); // Close modal after action
+        });
         setShowConfirmModal(true);
     };
 
