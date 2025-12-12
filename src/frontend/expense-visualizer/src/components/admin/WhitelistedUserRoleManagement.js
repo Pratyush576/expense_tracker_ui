@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Form, Button, Alert, Spinner, Table, InputGroup } from 'react-bootstrap';
 import axios from 'axios';
 import { PersonPlusFill, PersonDashFill } from 'react-bootstrap-icons';
+import ConfirmationModal from '../../ConfirmationModal'; // Import ConfirmationModal
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -12,6 +13,12 @@ const WhitelistedUserRoleManagement = ({ currentUser }) => {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState(null);
     const [messageType, setMessageType] = useState(null); // 'success' or 'danger'
+
+    // State for confirmation modal
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmModalTitle, setConfirmModalTitle] = useState('');
+    const [confirmModalMessage, setConfirmModalMessage] = useState('');
+    const [confirmModalAction, setConfirmModalAction] = useState(null);
 
     const isAdmin = currentUser?.role === 'ADMIN';
     const isManager = currentUser?.role === 'MANAGER';
@@ -123,6 +130,19 @@ const WhitelistedUserRoleManagement = ({ currentUser }) => {
         }
     };
 
+    const handleRoleChangeRequest = (userId, currentRole, newRole) => {
+        if (!canAssignRole) {
+            setMessage("You do not have permission to assign roles.");
+            setMessageType('danger');
+            return;
+        }
+
+        setConfirmModalTitle('Confirm Role Change');
+        setConfirmModalMessage(`Are you sure you want to change the role of User ID ${userId} from ${currentRole} to ${newRole}?`);
+        setConfirmModalAction(() => () => handleAssignRole(userId, newRole));
+        setShowConfirmModal(true);
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
@@ -187,9 +207,9 @@ const WhitelistedUserRoleManagement = ({ currentUser }) => {
                                     <td>
                                         <Form.Select
                                             value={user.role}
-                                            onChange={(e) => handleAssignRole(user.user_id, e.target.value)}
-                                            disabled={submitting || !canAssignRole || user.role === 'ADMIN' || user.role === 'MANAGER'}
-                                            title={!canAssignRole ? "Only Admin can assign roles" : (user.role === 'ADMIN' || user.role === 'MANAGER' ? "Cannot change role for Admin or Manager" : "")}
+                                            onChange={(e) => handleRoleChangeRequest(user.user_id, user.role, e.target.value)}
+                                            disabled={submitting || !canAssignRole} // Role dropdown is always enabled if current user is Admin
+                                            title={!canAssignRole ? "Only Admin can assign roles" : ""}
                                         >
                                             <option value="USER">USER</option>
                                             <option value="MANAGER">MANAGER</option>
@@ -216,6 +236,13 @@ const WhitelistedUserRoleManagement = ({ currentUser }) => {
                     <Alert variant="info">No users currently whitelisted.</Alert>
                 )}
             </Card.Body>
+            <ConfirmationModal
+                show={showConfirmModal}
+                title={confirmModalTitle}
+                message={confirmModalMessage}
+                onConfirm={confirmModalAction}
+                onCancel={() => setShowConfirmModal(false)}
+            />
         </Card>
     );
 };
