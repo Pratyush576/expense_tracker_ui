@@ -24,7 +24,7 @@ const WhitelistManagement = () => {
             const response = await axios.get(`${API_BASE_URL}/api/admin/whitelist`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setWhitelistedUsers(response.data);
+            setWhitelistedUsers(response.data); // Expecting WhitelistedUserResponse objects
         } catch (err) {
             console.error("Error fetching whitelisted users:", err);
             setMessage("Failed to fetch whitelisted users.");
@@ -132,6 +132,10 @@ const WhitelistManagement = () => {
                         <thead>
                             <tr>
                                 <th>User ID</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Phone Number</th>
                                 <th>Whitelisted Since</th>
                                 <th>Actions</th>
                             </tr>
@@ -140,6 +144,10 @@ const WhitelistManagement = () => {
                             {whitelistedUsers.map((user) => (
                                 <tr key={user.user_id}>
                                     <td>{user.user_id}</td>
+                                    <td>{user.user_first_name || 'N/A'}</td>
+                                    <td>{user.user_last_name || 'N/A'}</td>
+                                    <td>{user.email}</td>
+                                    <td>{user.mobile_phone_number || 'N/A'}</td>
                                     <td>{new Date(user.added_at).toLocaleString()}</td>
                                     <td>
                                         <Button 

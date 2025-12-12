@@ -2337,6 +2337,16 @@ def get_all_proposals(
 class WhitelistUserCreate(BaseModel):
     user_id: int
 
+# Pydantic response model for whitelisted users with user details
+class WhitelistedUserResponse(BaseModel):
+    id: int
+    user_id: int
+    added_at: datetime
+    email: str
+    user_first_name: Optional[str] = None
+    user_last_name: Optional[str] = None
+    mobile_phone_number: Optional[str] = None
+
 @app.post("/api/admin/whitelist/add", response_model=WhitelistedUser)
 def add_user_to_whitelist(
     whitelist_user_data: WhitelistUserCreate,
@@ -2377,13 +2387,26 @@ def remove_user_from_whitelist(
     log_activity(request, session, admin_user.id, ActivityType.ADMIN_WHITELIST_REMOVE, profile_id=None)
     return {"message": "User removed from whitelist successfully"}
 
-@app.get("/api/admin/whitelist", response_model=List[WhitelistedUser])
+@app.get("/api/admin/whitelist", response_model=List[WhitelistedUserResponse])
 def get_whitelisted_users(
     session: Session = Depends(get_session),
     admin_user: User = Depends(auth.get_current_admin_user),
 ):
-    whitelisted_users = session.exec(select(WhitelistedUser)).all()
-    return whitelisted_users
+    statement = select(WhitelistedUser, User).join(User)
+    results = session.exec(statement).all()
+    
+    whitelisted_users_with_details = []
+    for whitelisted_user, user in results:
+        whitelisted_users_with_details.append(WhitelistedUserResponse(
+            id=whitelisted_user.id,
+            user_id=whitelisted_user.user_id,
+            added_at=whitelisted_user.added_at,
+            email=user.email,
+            user_first_name=user.user_first_name,
+            user_last_name=user.user_last_name,
+            mobile_phone_number=user.mobile_phone_number
+        ))
+    return whitelisted_users_with_details
 
 @app.get("/api/manager/users/{user_id}", response_model=UserResponse)
 def get_user_by_id_for_manager(
