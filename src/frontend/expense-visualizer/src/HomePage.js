@@ -6,10 +6,24 @@ import { RocketFill, PlusCircle, ArrowUpCircleFill, ArrowDownCircleFill, InfoCir
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
-const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome }) => {
+const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome, currentUser }) => {
     const [profilesSummary, setProfilesSummary] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        let greeting;
+        if (hour < 12) {
+            greeting = "Good morning";
+        } else if (hour < 18) {
+            greeting = "Good afternoon";
+        } else {
+            greeting = "Good evening";
+        }
+        const userName = currentUser?.user_first_name || "there";
+        return `${greeting}, ${userName}!`;
+    };
 
     const fetchProfiles = useCallback(async () => {
         try {
@@ -116,6 +130,21 @@ const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome }) => {
 
     return (
         <div className="homepage-container">
+            <Card className="shadow-lg mb-4">
+                <Card.Body>
+                    <h2 className="mb-3">{getGreeting()}</h2>
+                    {profilesSummary.length > 0 && (
+                        <>
+                            {summaryMessages.map((summary, index) => (
+                                <p key={index} className={`lead mb-2 ${summary.sentiment === "positive" ? "text-success" : summary.sentiment === "negative" ? "text-danger" : ""}`}>
+                                    {summary.icon} <span dangerouslySetInnerHTML={{ __html: summary.message }} />
+                                </p>
+                            ))}
+                        </>
+                    )}
+                </Card.Body>
+            </Card>
+
             {profilesSummary.length === 0 ? (
                 <Card className="shadow-lg p-4 text-center mb-4">
                     <Card.Body>
@@ -134,75 +163,67 @@ const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome }) => {
                     </Card.Body>
                 </Card>
             ) : (
-                <Card className="shadow-lg mb-4">
-                    <Card.Body>
-                        {summaryMessages.map((summary, index) => (
-                            <p key={index} className={`lead mb-2 ${summary.sentiment === "positive" ? "text-success" : summary.sentiment === "negative" ? "text-danger" : ""}`}>
-                                {summary.icon} <span dangerouslySetInnerHTML={{ __html: summary.message }} />
-                            </p>
-                        ))}
-                    </Card.Body>
-                </Card>
-            )}
+                <>
+                    {expenseManagerProfiles.length > 0 && (
+                        <Card className="shadow-lg mb-4">
+                            <Card.Header as="h5">Expense Manager Profiles (Current Year)</Card.Header>
+                            <Card.Body>
+                                <Table striped bordered hover responsive className="expense-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Profile Name</th>
+                                            <th>Profile Type</th>
+                                            <th>Total Income</th>
+                                            <th>Total Expenses</th>
+                                            <th>Net Income</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {expenseManagerProfiles.map(profile => (
+                                            <tr key={profile.id} onClick={() => onProfileSelect(profile.id)} style={{ cursor: 'pointer' }}>
+                                                <td>{profile.name}</td>
+                                                <td>{profile.profile_type}</td>
+                                                <td>{formatCurrency(profile.total_income ?? 0, profile.currency)}</td>
+                                                <td>{formatCurrency(profile.total_expenses ?? 0, profile.currency)}</td>
+                                                <td>{formatCurrency(profile.net_income ?? 0, profile.currency)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            </Card.Body>
+                        </Card>
+                    )}
 
-            {expenseManagerProfiles.length > 0 && (
-                <Card className="shadow-lg mb-4">
-                    <Card.Header as="h5">Expense Manager Profiles (Current Year)</Card.Header>
-                    <Card.Body>
-                        <Table striped bordered hover responsive className="expense-table">
-                            <thead>
-                                <tr>
-                                    <th>Profile Name</th>
-                                    <th>Profile Type</th>
-                                    <th>Total Income</th>
-                                    <th>Total Expenses</th>
-                                    <th>Net Income</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {expenseManagerProfiles.map(profile => (
-                                    <tr key={profile.id} onClick={() => onProfileSelect(profile.id)} style={{ cursor: 'pointer' }}>
-                                        <td>{profile.name}</td>
-                                        <td>{profile.profile_type}</td>
-                                        <td>{formatCurrency(profile.total_income ?? 0, profile.currency)}</td>
-                                        <td>{formatCurrency(profile.total_expenses ?? 0, profile.currency)}</td>
-                                        <td>{formatCurrency(profile.net_income ?? 0, profile.currency)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </Card.Body>
-                </Card>
-            )}
-
-            {assetManagerProfiles.length > 0 && (
-                <Card className="shadow-lg mb-4">
-                    <Card.Header as="h5">Asset Manager Profiles (Current Year)</Card.Header>
-                    <Card.Body>
-                        <Table striped bordered hover responsive className="expense-table">
-                            <thead>
-                                <tr>
-                                    <th>Profile Name</th>
-                                    <th>Profile Type</th>
-                                    <th>Total Latest Value</th>
-                                    <th>Total Assets</th>
-                                    <th>Total Debt</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {assetManagerProfiles.map(profile => (
-                                    <tr key={profile.id} onClick={() => onProfileSelect(profile.id)} style={{ cursor: 'pointer' }}>
-                                        <td>{profile.name}</td>
-                                        <td>{profile.profile_type}</td>
-                                        <td>{formatCurrency(profile.total_latest_asset_value ?? 0, profile.currency)}</td>
-                                        <td>{formatCurrency(profile.total_asset_value ?? 0, profile.currency)}</td>
-                                        <td>{formatCurrency(profile.total_debt_value ?? 0, profile.currency)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </Card.Body>
-                </Card>
+                    {assetManagerProfiles.length > 0 && (
+                        <Card className="shadow-lg mb-4">
+                            <Card.Header as="h5">Asset Manager Profiles (Current Year)</Card.Header>
+                            <Card.Body>
+                                <Table striped bordered hover responsive className="expense-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Profile Name</th>
+                                            <th>Profile Type</th>
+                                            <th>Total Latest Value</th>
+                                            <th>Total Assets</th>
+                                            <th>Total Debt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {assetManagerProfiles.map(profile => (
+                                            <tr key={profile.id} onClick={() => onProfileSelect(profile.id)} style={{ cursor: 'pointer' }}>
+                                                <td>{profile.name}</td>
+                                                <td>{profile.profile_type}</td>
+                                                <td>{formatCurrency(profile.total_latest_asset_value ?? 0, profile.currency)}</td>
+                                                <td>{formatCurrency(profile.total_asset_value ?? 0, profile.currency)}</td>
+                                                <td>{formatCurrency(profile.total_debt_value ?? 0, profile.currency)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            </Card.Body>
+                        </Card>
+                    )}
+                </>
             )}
         </div>
     );

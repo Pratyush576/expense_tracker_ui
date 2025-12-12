@@ -465,7 +465,7 @@ function MainApp({ currentUser, onSubscribe }) {
                     )}
                     <Tabs activeKey={key} onSelect={handleTabSelect} className="mb-3">
                         <Tab eventKey="home" title="Home">
-                            <HomePage onProfileSelect={handleProfileSelect} setShowCreateProfileModalFromHome={setShowCreateProfileModalFromHome} />
+                            <HomePage onProfileSelect={handleProfileSelect} setShowCreateProfileModalFromHome={setShowCreateProfileModalFromHome} currentUser={currentUser} />
                         </Tab>
 
                         {currentUser?.is_premium ? (
