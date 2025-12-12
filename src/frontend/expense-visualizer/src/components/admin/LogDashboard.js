@@ -147,9 +147,9 @@ const LogDashboard = () => {
                             </Form.Group>
                         </Col>
                         <Col md={3}>
-                            <Form.Group as={Row} controlId="groupBy" className="align-items-center">
-                                <Form.Label column sm={5}>Group By</Form.Label>
-                                <Col sm={7}>
+                            <Form.Group as={Row} controlId="groupBy" className="align-items-center g-0">
+                                <Form.Label column sm="auto" className="me-2">Group By</Form.Label>
+                                <Col sm="auto">
                                     <Form.Control as="select" value={groupBy} onChange={e => setGroupBy(e.target.value)}>
                                         <option value="hour">Hour</option>
                                         <option value="day">Day</option>
