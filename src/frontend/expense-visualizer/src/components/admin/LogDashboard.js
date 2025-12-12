@@ -15,7 +15,7 @@ const LogDashboard = () => {
         return d;
     });
     const [endDate, setEndDate] = useState(new Date());
-    const [groupBy, setGroupBy] = useState('day');
+    const [groupBy, setGroupBy] = useState('hour');
     const [selectedProfileId, setSelectedProfileId] = useState('');
     const [selectedUserId, setSelectedUserId] = useState('');
     const [selectedActivityType, setSelectedActivityType] = useState('');
