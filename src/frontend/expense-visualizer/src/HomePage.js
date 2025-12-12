@@ -98,7 +98,7 @@ const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome, currentU
             } else {
                 message += ` has a **net income of zero** for the current year, with ${formattedTotalIncome} in income and ${formattedTotalExpenses} in expenses. A balanced approach!`;
             }
-            summaries.push({ message, icon, sentiment });
+            summaries.push({ message: message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'), icon, sentiment });
         });
 
         assetManagerProfiles.forEach(profile => {
@@ -125,7 +125,7 @@ const HomePage = ({ onProfileSelect, setShowCreateProfileModalFromHome, currentU
             } else {
                 message += ` holds assets worth **${formattedTotalLatestAssetValue}**, with ${formattedTotalAssetValue} in assets and ${formattedTotalDebtValue} in liabilities. A solid foundation!`;
             }
-            summaries.push({ message, icon, sentiment });
+            summaries.push({ message: message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'), icon, sentiment });
         });
 
         return summaries;
