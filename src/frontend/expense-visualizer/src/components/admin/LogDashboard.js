@@ -9,8 +9,12 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:800
 
 const LogDashboard = () => {
     const [logs, setLogs] = useState([]);
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
+    const [startDate, setStartDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 6); // Last 7 days including today
+        return d;
+    });
+    const [endDate, setEndDate] = useState(new Date());
     const [groupBy, setGroupBy] = useState('day');
     const [selectedProfileId, setSelectedProfileId] = useState('');
     const [selectedUserId, setSelectedUserId] = useState('');
@@ -87,16 +91,16 @@ const LogDashboard = () => {
                     const color = `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`;
 
                     const newChart = new Chart(ctx, {
-                        type: 'line',
+                        type: 'line', // Chart.js uses 'line' type with fill: true for area charts
                         data: {
                             labels,
                             datasets: [{
                                 label: type,
                                 data,
                                 borderColor: color,
-                                backgroundColor: color.replace('1)', '0.2)'), // Light fill
-                                fill: false,
-                                tension: 0.1,
+                                backgroundColor: color.replace('1)', '0.3)'), // Slightly more opaque fill
+                                fill: true, // Set to true for area chart
+                                tension: 0.4, // Smoother curves for area chart
                             }],
                         },
                         options: {
@@ -105,6 +109,15 @@ const LogDashboard = () => {
                             scales: {
                                 y: {
                                     beginAtZero: true,
+                                    stacked: true, // Enable stacking for area charts
+                                },
+                                x: {
+                                    stacked: true, // Enable stacking for area charts
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
                                 },
                             },
                         },
