@@ -70,10 +70,17 @@ const WhitelistManagement = ({ currentUser }) => {
         }
     };
 
-    const handleRemoveUser = async (userId) => {
+    const handleRemoveUser = async (userId, userRole) => {
         setSubmitting(true);
         setMessage(null);
         setMessageType(null);
+
+        if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+            setMessage("Admin or Manager users cannot be removed from the whitelisted list.");
+            setMessageType('danger');
+            setSubmitting(false);
+            return;
+        }
 
         try {
             const token = localStorage.getItem('token');
@@ -159,8 +166,9 @@ const WhitelistManagement = ({ currentUser }) => {
                                         <Button 
                                             variant="danger" 
                                             size="sm" 
-                                            onClick={() => handleRemoveUser(user.user_id)} 
-                                            disabled={submitting || !canRemove}
+                                            onClick={() => handleRemoveUser(user.user_id, user.role)} 
+                                            disabled={submitting || !canRemove || user.role === 'ADMIN' || user.role === 'MANAGER'}
+                                            title={user.role === 'ADMIN' || user.role === 'MANAGER' ? "Admin or Manager cannot be removed from whitelisted users." : ""}
                                         >
                                             {submitting ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : <><PersonDashFill className="me-2" />Remove</>}
                                         </Button>
