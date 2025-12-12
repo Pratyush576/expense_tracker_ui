@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Nav, Container, Row, Col, Button } from 'react-bootstrap';
-import { PeopleFill, CashStack, TagFill, ClipboardCheck, ClipboardData, FileEarmarkPlus, ArrowLeft } from 'react-bootstrap-icons'; // Import icons
+import { PeopleFill, CashStack, TagFill, ClipboardCheck, ClipboardData, FileEarmarkPlus, ArrowLeft, HouseFill } from 'react-bootstrap-icons'; // Import icons
 import UserManagement from './admin/UserManagement';
 import PriceManagement from './admin/PriceManagement';
 import DiscountManagement from './admin/DiscountManagement';
@@ -38,6 +38,7 @@ const AdminPanel = ({ currentUser }) => {
             <Row>
                 <Col md={3} lg={2} className="bg-light sidebar">
                     <Nav className="flex-column">
+                        <Nav.Link as={Link} to="" className="d-flex align-items-center"><HouseFill className="me-2" />Admin Home</Nav.Link>
                         {isAdmin && <Nav.Link as={Link} to="users" className="d-flex align-items-center"><PeopleFill className="me-2" />User Management</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="pricing" className="d-flex align-items-center"><CashStack className="me-2" />Pricing</Nav.Link>}
                         {isAdmin && <Nav.Link as={Link} to="discounts" className="d-flex align-items-center"><TagFill className="me-2" />Discounts</Nav.Link>}
